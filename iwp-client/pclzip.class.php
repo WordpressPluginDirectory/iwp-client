@@ -26,9 +26,9 @@
 // --------------------------------------------------------------------------------
 
   // ----- Constants
-if(basename($_SERVER['SCRIPT_FILENAME']) == "pclzip.class.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
+    
   if (!defined('IWP_PCLZIP_READ_BLOCK_SIZE')) {
     define( 'IWP_PCLZIP_READ_BLOCK_SIZE', 2048 );
   }
@@ -3429,6 +3429,7 @@ endif;
 
         // ----- Open the source file
         //if (($v_file = @fopen($p_filename, "rb")) == 0) { 												//darkPrince
+    
 		if (($v_file = @fopen($p_filedescr['filename'], "rb")) == 0) {
           IWPPclZip::privErrorLog(IWP_PCLZIP_ERR_READ_OPEN_FAIL, "Unable to open file '$p_filename' in binary read mode. Please try changing the file permission to 644 or exclude this file from your backup.");
 		  echo "File Read Error";
@@ -3509,7 +3510,9 @@ endif;
         
         // ----- Call the header generation
         if (($v_result = $this->privWriteFileHeader($p_header)) != 1) {
-          @fclose($v_file);
+          if (isset($v_file) && is_resource($v_file)) {
+            @fclose($v_file);
+          }
           return $v_result;
         }
 
@@ -4777,7 +4780,9 @@ endif;
     // ----- Creates a temporary file
     $v_gzip_temp_name = IWP_PCLZIP_TEMPORARY_DIR.uniqid('pclzip-').'.gz';
     if (($v_dest_file = @fopen($v_gzip_temp_name, "wb")) == 0) {
-      fclose($v_file);
+      if (isset($v_file) && is_resource($v_file)) {
+        @fclose($v_file);
+      }
       IWPPclZip::privErrorLog(IWP_PCLZIP_ERR_WRITE_OPEN_FAIL, 'Unable to open temporary file \''.$v_gzip_temp_name.'\' in binary write mode');
       return IWPPclZip::errorCode();
     }

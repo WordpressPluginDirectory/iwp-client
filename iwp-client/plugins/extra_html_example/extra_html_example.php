@@ -7,9 +7,9 @@
  ************************************************************/
 
 // add filter for the stats structure
- if(basename($_SERVER['SCRIPT_FILENAME']) == "extra_html_example.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
+    
 add_filter('iwp_mmb_stats_filter', iwp_mmb_extra_html_example);
 
 function iwp_mmb_extra_html_example($stats)

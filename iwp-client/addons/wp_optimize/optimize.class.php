@@ -1,8 +1,8 @@
 <?php
+if ( ! defined('ABSPATH') )
+    die();
+
 global $wpdb;
-if(basename($_SERVER['SCRIPT_FILENAME']) == "optimize.class.php"):
-    exit;
-endif;
 class IWP_MMB_Optimize extends IWP_MMB_Core
 {
     function __construct()
@@ -196,7 +196,7 @@ class IWP_MMB_Optimize extends IWP_MMB_Core
 		
 			default:
 				$message .= __('NO Actions Taken', 'wp-optimize');
-				$message_array['value'] = $comments;
+				$message_array['value'] = 0;
 				
 				break;
 		} // end of switch

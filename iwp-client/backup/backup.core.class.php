@@ -29,6 +29,14 @@ class IWP_MMB_Backup_Core {
 	public $error_reporting_stop_when_logged = false;
 	
 	private $combine_jobs_around;
+	public $no_deprecation_warnings;
+	public $backup_is_already_complete;
+	public $last_successful_resumption;
+	public $no_checkin_last_time;
+	public $error_count_before_cloud_backup;
+	public $semaphore;
+	public $backup_dir;
+	public $backups_instance_ids;
 
 	public function __construct() {
 
@@ -115,7 +123,7 @@ class IWP_MMB_Backup_Core {
 		if ($updated) {
 			return $new_setting;
 		} else {
-			return WP_Error('save_failed', 'Saving the options in the new format failed', array('method' => $method, 'current_setting' => $new_setting));
+			return new  WP_Error('save_failed', 'Saving the options in the new format failed', array('method' => $method, 'current_setting' => $new_setting));
 		}
 	
 	}
@@ -400,7 +408,7 @@ class IWP_MMB_Backup_Core {
 		@set_time_limit(IWP_SET_TIME_LIMIT);
 		$max_execution_time = (int)@ini_get("max_execution_time");
 
-		$logline = "InfiniteWP WordPress plugin (https://infinitewp.com): ".$this->version." WP: ".$wp_version." PHP: ".phpversion()." (".PHP_SAPI.", ".@php_uname().") MySQL: $mysql_version WPLANG: ".get_locale()." Server: ".$_SERVER["SERVER_SOFTWARE"]." safe_mode: $safe_mode max_execution_time: $max_execution_time memory_limit: $memory_limit (used: ${memory_usage}M | ${memory_usage2}M) multisite: ".(is_multisite() ? 'Y' : 'N')." openssl: ".(defined('OPENSSL_VERSION_TEXT') ? OPENSSL_VERSION_TEXT : 'N')." mcrypt: ".(function_exists('mcrypt_encrypt') ? 'Y' : 'N')." LANG: ".getenv('LANG')." ZipArchive::addFile: ";
+		$logline = "InfiniteWP WordPress plugin (https://infinitewp.com): ".$this->version." WP: ".$wp_version." PHP: ".phpversion()." (".PHP_SAPI.", ".@php_uname().") MySQL: $mysql_version WPLANG: ".get_locale()." Server: ".$_SERVER["SERVER_SOFTWARE"]." safe_mode: $safe_mode max_execution_time: $max_execution_time memory_limit: $memory_limit (used: ".$memory_usage."M | ".$memory_usage2."M) multisite: ".(is_multisite() ? 'Y' : 'N')." openssl: ".(defined('OPENSSL_VERSION_TEXT') ? OPENSSL_VERSION_TEXT : 'N')." mcrypt: ".(function_exists('mcrypt_encrypt') ? 'Y' : 'N')." LANG: ".getenv('LANG')." ZipArchive::addFile: ";
 
 		// method_exists causes some faulty PHP installations to segfault, leading to support requests
 		if (version_compare(phpversion(), '5.2.0', '>=') && extension_loaded('zip')) {
@@ -757,7 +765,7 @@ class IWP_MMB_Backup_Core {
 			if (method_exists($caller, 'chunked_upload_finish')) {
 				$ret = $caller->chunked_upload_finish($file);
 				if (!$ret) {
-					$this->log("$logname - failed to re-assemble chunks (".$e->getMessage().')');
+					$this->log("$logname - failed to re-assemble chunks ");
 					$this->log(sprintf(__('%s error - failed to re-assemble chunks', 'InfiniteWP'), $logname), 'error');
 				}
 			}
@@ -816,7 +824,7 @@ class IWP_MMB_Backup_Core {
 				if ($expected_bytes_delivered_so_far) {
 					$this->log("$file: local file is status: $start_offset/$remote_size bytes; requesting next $requested_bytes bytes");
 				} else {
-					$this->log("$file: local file is status: $start_offset/$remote_size bytes; requesting next chunk (${start_offset}-)");
+					$this->log("$file: local file is status: $start_offset/$remote_size bytes; requesting next chunk (".$start_offset."-)");
 				}
 
 				if ($start_offset > 0 || $last_byte<$remote_size) {
@@ -1078,7 +1086,9 @@ class IWP_MMB_Backup_Core {
 			if (!file_exists($iwp_backup_dir.'/binziptest/subdir1/subdir2')) return false;
 			
 			file_put_contents($iwp_backup_dir.'/binziptest/subdir1/subdir2/test.html', '<html><body><a href="https://infinitewp.com">InfiniteWP is a great backup and restoration plugin for WordPress.</a></body></html>');
-			@unlink($iwp_backup_dir.'/binziptest/test.zip');
+			if(file_exists($iwp_backup_dir.'/binziptest/test.zip')){
+				@unlink($iwp_backup_dir.'/binziptest/test.zip');
+			}
 			if (is_file($iwp_backup_dir.'/binziptest/subdir1/subdir2/test.html')) {
 
 				$exec = "cd ".escapeshellarg($iwp_backup_dir)."; $potzip";
@@ -3992,10 +4002,10 @@ CREATE TABLE $wpdb->signups (
 					'path' => $ftp_details['ftp_remote_folder'],
 					'port' => $ftp_details['ftp_port'],
 					'ftp_site_folder' => $ftp_details['ftp_site_folder'],
-					'passive' => $ftp_details['ftp_passive']?true:false,
-					'key' => $ftp_details['ftp_key'],
+					'passive' => isset($ftp_details['ftp_passive'])?true:false,
+					'key' => isset($ftp_details['ftp_key'])?$ftp_details['ftp_key']:'',
 				);
-				if ($ftp_details['use_sftp']) {
+				if (isset($ftp_details['use_sftp']) && $ftp_details['use_sftp']) {
 					update_option('IWP_service', 'sftp');
 					IWP_MMB_Backup_Options::update_iwp_backup_option('IWP_sftp', $opts);
 				}else{
@@ -4617,7 +4627,7 @@ CREATE TABLE $wpdb->signups (
 				return $new_s3_obj->postUploadS3Verification($backup_file, $destFile, $type, $as3_bucket, $as3_access_key, $as3_secure_key, $as3_bucket_region, $size1, $size2, $return_size = true);
 			}
 			else{
-				return $backup_instance->postUploadS3VerificationBwdComp($backup_file, $destFile, $type, $as3_bucket, $as3_access_key, $as3_secure_key, $as3_bucket_region, $obj, $actual_file_size, $size1, $size2, $return_size = true);
+				return $backup_instance->postUploadS3VerificationBwdComp($backup_file, $destFile, $obj, $type, $as3_bucket, $as3_access_key, $as3_secure_key, $as3_bucket_region, $actual_file_size, $size1, $size2, $return_size = true);
 			}
 		}elseif ($type == 'ftp') {
 			extract($args['iwp_ftp']);

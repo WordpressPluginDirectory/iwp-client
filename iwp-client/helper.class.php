@@ -15,9 +15,9 @@
  * Copyright (c) 2011 Prelovac Media
  * www.prelovac.com
  **************************************************************/
-if(basename($_SERVER['SCRIPT_FILENAME']) == "helper.class.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
+    
 if(!defined('MMB_WORKER_VERSION'))
 	define('MMB_WORKER_VERSION', '0');
 
@@ -430,7 +430,7 @@ class IWP_MMB_Helper
 					$secure .= $decrypted;
 				}
 			} else {
-				openssl_public_decrypt($input, $decrypted, $pl_key);
+				openssl_public_decrypt($data, $decrypted, $pl_key);
 				$secure = $decrypted;
 			}
 			return $secure;

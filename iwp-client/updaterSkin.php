@@ -10,6 +10,9 @@
  *
  * @see Automatic_Upgrader_Skin
  */
+
+if ( ! defined('ABSPATH') )
+    die();
 class IWP_Updater_TraceableUpdaterSkin
 {
 

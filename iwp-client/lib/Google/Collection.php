@@ -10,14 +10,14 @@ require_once $GLOBALS['iwp_mmb_plugin_dir']."/lib/Google/Model.php";
 class IWP_google_Collection extends IWP_google_Model implements Iterator, Countable
 {
   protected $collection_key = 'items';
-
+  #[\ReturnTypeWillChange]
   public function rewind()
   {
     if (is_array($this->modelData[$this->collection_key])) {
       reset($this->modelData[$this->collection_key]);
     }
   }
-
+  #[\ReturnTypeWillChange]
   public function current()
   {
     $this->coerceType($this->key());
@@ -25,25 +25,25 @@ class IWP_google_Collection extends IWP_google_Model implements Iterator, Counta
       return current($this->modelData[$this->collection_key]);
     }
   }
-
+  #[\ReturnTypeWillChange]
   public function key()
   {
     if (is_array($this->modelData[$this->collection_key])) {
       return key($this->modelData[$this->collection_key]);
     }
   }
-
+  #[\ReturnTypeWillChange]
   public function next()
   {
     return next($this->modelData[$this->collection_key]);
   }
-
+  #[\ReturnTypeWillChange]
   public function valid()
   {
     $key = $this->key();
     return $key !== null && $key !== false;
   }
-
+  #[\ReturnTypeWillChange]
   public function count()
   {
     return count($this->modelData[$this->collection_key]);

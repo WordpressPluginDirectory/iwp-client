@@ -1,8 +1,7 @@
 <?php
 // IWP_MMB_fileEditor
-if(basename($_SERVER['SCRIPT_FILENAME']) == "file_editor.class.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
 class IWP_MMB_fileEditor extends IWP_MMB_Core
 {
     function __construct()

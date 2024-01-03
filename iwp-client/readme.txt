@@ -3,7 +3,7 @@ Contributors: infinitewp, amritanandh, rajkuppus
 Tags: admin, administration, amazon, api, authentication, automatic, dashboard, dropbox, events, integration, manage, multisite, multiple, notification, performance, s3, security, seo, stats, tracking, infinitewp, updates, backup, restore, iwp, infinite
 Requires at least: 3.1
 Tested up to: 6.4.2
-Stable tag: 1.12.3.1
+Stable tag: 1.12.5
 
 Install this plugin on unlimited sites and manage them all from a central dashboard.
 This plugin communicates with your InfiniteWP Admin Panel.
@@ -48,10 +48,18 @@ Credits: [Vladimir Prelovac](http://prelovac.com/vladimir) for his worker plugin
 
 == Changelog ==
 
+= 1.12.5 - Jan 3rd 2024 =
+* Improvement: Plugin update response improved.
+* Fix: PHP Fatal error occurred: Uncaught ArgumentCountError: Too few arguments to function IWP_MMB_S3::abortMultipartUpload(), 1 passed in /iwp-client/lib/amazon/s3IWPBackup.php
+* Fix: PHP Fatal error occurred: Uncaught TypeError: fseek(): Argument #1 ($stream) must be of type resource, bool given in /iwp-client/backup.class.multicall.php:4356
+* Fix: IWP Client plugin connection error while performing WP fastest plugin cache clear.
+* Fix: Backup taken using Phoenix method not satisfying number of backups to keep.
+* Fix: php8 related warnings fixed.
+
 = 1.12.3.1 - Dec 8th 2023 =
-Improvement: New constant (IWP_BROKEN_LINK_RESULT_LIMIT) introduced to limit the Broken Linker checker result.
-Improvement: PHP secure library updated.
-Improvement: Better naming convention adopted.
+* Improvement: New constant (IWP_BROKEN_LINK_RESULT_LIMIT) introduced to limit the Broken Linker checker result.
+* Improvement: PHP secure library updated.
+* Improvement: Better naming convention adopted.
 
 = 1.12.3 - June 30th 2023 =
 * Fix: PHP Fatal error occurred: Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, string given in iwp-client/init.php:2122

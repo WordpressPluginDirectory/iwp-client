@@ -89,7 +89,7 @@ class IWP_MMB_Semaphore {
 	 * @return Social_Semaphore
 	 */
 	public function increment(array $filters = array()) {
-		global $wpdb;
+		global $wpdb, $iwp_backup_core;
 
 		if (count($filters)) {
 			// Loop through all of the filters and increment the semaphore

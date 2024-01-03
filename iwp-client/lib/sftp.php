@@ -29,7 +29,7 @@ class IWP_MMB_RemoteStorage_sftp_helper {
 		return __("Encrypted FTP is available, and will be automatically tried first (before falling back to non-encrypted if it is not successful), unless you disable it using the expert options. The 'Test FTP Login' button will tell you what type of connection is in use.", 'InfiniteWP').' '.__('Some servers advertise encrypted FTP as available, but then time-out (after a long time) when you attempt to use it. If you find this happenning, then go into the "Expert Options" (below) and turn off SSL there.', 'InfiniteWP').' '.__('Explicit encryption is used by default. To force implicit encryption (port 990), add :990 to your FTP server below.', ' InfiniteWP');
 	}
 }
-
+#[AllowDynamicProperties]
 class IWP_MMB_RemoteStorage_sftp extends IWP_MMB_RemoteStorage_Extension {
 
 	public function do_connect_and_chdir() {
@@ -405,426 +405,428 @@ class IWP_MMB_RemoteStorage_sftp extends IWP_MMB_RemoteStorage_Extension {
  *
  * We somewhat crudely detect the request for implicit via use of port 990. But in the real world, it's unlikely we'll come across anything else - if we do, we can abstract a little more.
  */
-class IWP_MMB_ftp_wrapper {
-
-	private $conn_id;
-
-	private $host;
-
-	private $username;
-
-	private $password;
-
-	private $port;
-
-	public $timeout = 60;
-
-	public $passive = true;
-
-	// Whether to *allow* (not necessarily require) SSL
-	public $ssl = true;
-
-	public $system_type = '';
-
-	public $login_type = 'non-encrypted';
-
-	public $use_server_certs = false;
-
-	public $disable_verify = true;
-
-	public $curl_handle;
- 
-	public function __construct($host, $username, $password, $port = 21) {
-		$this->host     = $host;
-		$this->username = $username;
-		$this->password = $password;
-		$this->port     = $port;
-	}
- 
-	public function connect() {
-
-		// Implicit SSL - not handled via PHP's native ftp_ functions, so we use curl instead
-		if (990 == $this->port || (defined('IWP_FTP_USECURL') && IWP_FTP_USECURL)) {
-			if (false == $this->ssl) {
-				$this->port = 21;
-			} else {
-				$this->curl_handle = curl_init();
-				if (!$this->curl_handle) {
+if (class_exists('IWP_MMB_ftp_wrapper')) {
+	class IWP_MMB_ftp_wrapper {
+	
+		private $conn_id;
+	
+		private $host;
+	
+		private $username;
+	
+		private $password;
+	
+		private $port;
+	
+		public $timeout = 60;
+	
+		public $passive = true;
+	
+		// Whether to *allow* (not necessarily require) SSL
+		public $ssl = true;
+	
+		public $system_type = '';
+	
+		public $login_type = 'non-encrypted';
+	
+		public $use_server_certs = false;
+	
+		public $disable_verify = true;
+	
+		public $curl_handle;
+	 
+		public function __construct($host, $username, $password, $port = 21) {
+			$this->host     = $host;
+			$this->username = $username;
+			$this->password = $password;
+			$this->port     = $port;
+		}
+	 
+		public function connect() {
+	
+			// Implicit SSL - not handled via PHP's native ftp_ functions, so we use curl instead
+			if (990 == $this->port || (defined('IWP_FTP_USECURL') && IWP_FTP_USECURL)) {
+				if (false == $this->ssl) {
 					$this->port = 21;
 				} else {
-					$options = array(
-						CURLOPT_USERPWD        => $this->username . ':' . $this->password,
-						CURLOPT_PORT           => $this->port,
-						CURLOPT_CONNECTTIMEOUT => 20,
-						// CURLOPT_TIMEOUT timeout is not just a "no-activity" timeout, but a total time limit on any Curl operation - undesirable
-						// CURLOPT_TIMEOUT        => 20,
-						CURLOPT_FTP_CREATE_MISSING_DIRS => true
-					);
-					$options[CURLOPT_FTP_SSL] = CURLFTPSSL_TRY; // CURLFTPSSL_ALL, // require SSL For both control and data connections
-					if (990 == $this->port) {
-						$options[CURLOPT_FTPSSLAUTH] = CURLFTPAUTH_SSL; // CURLFTPAUTH_DEFAULT, // let cURL choose the FTP authentication method (either SSL or TLS)
+					$this->curl_handle = curl_init();
+					if (!$this->curl_handle) {
+						$this->port = 21;
 					} else {
-						$options[CURLOPT_FTPSSLAUTH] = CURLFTPAUTH_DEFAULT; // let cURL choose the FTP authentication method (either SSL or TLS)
-					}
-					// Prints to STDERR by default - noisy
-					if (defined('WP_DEBUG') && WP_DEBUG==true && IWP_MMB_Backup_Options::get_iwp_backup_option('IWP_debug_mode')) {
-						$options[CURLOPT_VERBOSE] = true;
-					}
-					if ($this->disable_verify) {
-						$options[CURLOPT_SSL_VERIFYPEER] = false;
-						$options[CURLOPT_SSL_VERIFYHOST] = 0;
-					} else {
-						$options[CURLOPT_SSL_VERIFYPEER] = true;
-					}
-					if (!$this->use_server_certs) {
-						$options[CURLOPT_CAINFO] = $GLOBALS['iwp_mmb_plugin_dir'].'/lib/cacert.pem';
-					}
-					if (true != $this->passive) $options[CURLOPT_FTPPORT] = '-';
-					foreach ($options as $option_name => $option_value) {
-						if (!curl_setopt($this->curl_handle, $option_name, $option_value)) {
-// throw new Exception(sprintf('Could not set cURL option: %s', $option_name));
-							global $iwp_backup_core;
-							if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) {
-								$iwp_backup_core->log("Curl exception: will revert to normal FTP");
+						$options = array(
+							CURLOPT_USERPWD        => $this->username . ':' . $this->password,
+							CURLOPT_PORT           => $this->port,
+							CURLOPT_CONNECTTIMEOUT => 20,
+							// CURLOPT_TIMEOUT timeout is not just a "no-activity" timeout, but a total time limit on any Curl operation - undesirable
+							// CURLOPT_TIMEOUT        => 20,
+							CURLOPT_FTP_CREATE_MISSING_DIRS => true
+						);
+						$options[CURLOPT_FTP_SSL] = CURLFTPSSL_TRY; // CURLFTPSSL_ALL, // require SSL For both control and data connections
+						if (990 == $this->port) {
+							$options[CURLOPT_FTPSSLAUTH] = CURLFTPAUTH_SSL; // CURLFTPAUTH_DEFAULT, // let cURL choose the FTP authentication method (either SSL or TLS)
+						} else {
+							$options[CURLOPT_FTPSSLAUTH] = CURLFTPAUTH_DEFAULT; // let cURL choose the FTP authentication method (either SSL or TLS)
+						}
+						// Prints to STDERR by default - noisy
+						if (defined('WP_DEBUG') && WP_DEBUG==true && IWP_MMB_Backup_Options::get_iwp_backup_option('IWP_debug_mode')) {
+							$options[CURLOPT_VERBOSE] = true;
+						}
+						if ($this->disable_verify) {
+							$options[CURLOPT_SSL_VERIFYPEER] = false;
+							$options[CURLOPT_SSL_VERIFYHOST] = 0;
+						} else {
+							$options[CURLOPT_SSL_VERIFYPEER] = true;
+						}
+						if (!$this->use_server_certs) {
+							$options[CURLOPT_CAINFO] = $GLOBALS['iwp_mmb_plugin_dir'].'/lib/cacert.pem';
+						}
+						if (true != $this->passive) $options[CURLOPT_FTPPORT] = '-';
+						foreach ($options as $option_name => $option_value) {
+							if (!curl_setopt($this->curl_handle, $option_name, $option_value)) {
+		// throw new Exception(sprintf('Could not set cURL option: %s', $option_name));
+								global $iwp_backup_core;
+								if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) {
+									$iwp_backup_core->log("Curl exception: will revert to normal FTP");
+								}
+								$this->port = 21;
+								$this->curl_handle = false;
 							}
-							$this->port = 21;
-							$this->curl_handle = false;
 						}
 					}
-				}
-				// All done - leave
-				if ($this->curl_handle) {
-					$this->login_type = 'encrypted (implicit, port 990)';
-					return true;
+					// All done - leave
+					if ($this->curl_handle) {
+						$this->login_type = 'encrypted (implicit, port 990)';
+						return true;
+					}
 				}
 			}
-		}
-
-		$time_start = time();
-		if (function_exists('ftp_ssl_connect') && false !== $this->ssl) {
-			$this->conn_id = ftp_ssl_connect($this->host, $this->port, 15);
-			$attempting_ssl = true;
-		}
-
-		if ($this->conn_id) {
-			$this->login_type = 'encrypted';
-			$this->ssl = true;
-		} else {
-			$this->conn_id = ftp_connect($this->host, $this->port, 15);
-		}
-
-		if ($this->conn_id) $result = ftp_login($this->conn_id, $this->username, $this->password);
-
-		if (!empty($result)) {
-			ftp_set_option($this->conn_id, FTP_TIMEOUT_SEC, $this->timeout);
-			ftp_pasv($this->conn_id, $this->passive);
-			$this->system_type = ftp_systype($this->conn_id);
-			return true;
-		} elseif (!empty($attempting_ssl)) {
-			global $IWP_admin;
-			if (isset($IWP_admin->logged) && is_array($IWP_admin->logged)) {
-				// Clear the previous PHP messages, so that we only show the user messages from the method that worked (or from both if both fail)
-				$save_array = $IWP_admin->logged;
-				$IWP_admin->logged = array();
-				// trigger_error(__('Encrypted login failed; trying non-encrypted', 'IWP'), E_USER_NOTICE);
-			}
-			$this->ssl = false;
-			$this->login_type = 'non-encrypted';
+	
 			$time_start = time();
-			$this->conn_id = ftp_connect($this->host, $this->port, 15);
+			if (function_exists('ftp_ssl_connect') && false !== $this->ssl) {
+				$this->conn_id = ftp_ssl_connect($this->host, $this->port, 15);
+				$attempting_ssl = true;
+			}
+	
+			if ($this->conn_id) {
+				$this->login_type = 'encrypted';
+				$this->ssl = true;
+			} else {
+				$this->conn_id = ftp_connect($this->host, $this->port, 15);
+			}
+	
 			if ($this->conn_id) $result = ftp_login($this->conn_id, $this->username, $this->password);
+	
 			if (!empty($result)) {
 				ftp_set_option($this->conn_id, FTP_TIMEOUT_SEC, $this->timeout);
 				ftp_pasv($this->conn_id, $this->passive);
 				$this->system_type = ftp_systype($this->conn_id);
 				return true;
+			} elseif (!empty($attempting_ssl)) {
+				global $IWP_admin;
+				if (isset($IWP_admin->logged) && is_array($IWP_admin->logged)) {
+					// Clear the previous PHP messages, so that we only show the user messages from the method that worked (or from both if both fail)
+					$save_array = $IWP_admin->logged;
+					$IWP_admin->logged = array();
+					// trigger_error(__('Encrypted login failed; trying non-encrypted', 'IWP'), E_USER_NOTICE);
+				}
+				$this->ssl = false;
+				$this->login_type = 'non-encrypted';
+				$time_start = time();
+				$this->conn_id = ftp_connect($this->host, $this->port, 15);
+				if ($this->conn_id) $result = ftp_login($this->conn_id, $this->username, $this->password);
+				if (!empty($result)) {
+					ftp_set_option($this->conn_id, FTP_TIMEOUT_SEC, $this->timeout);
+					ftp_pasv($this->conn_id, $this->passive);
+					$this->system_type = ftp_systype($this->conn_id);
+					return true;
+				} else {
+					// Add back the previous PHP messages
+					if (isset($save_array)) $IWP_admin->logged = array_merge($save_array, $IWP_admin->logged);
+				}
+			}
+	
+			// If we got here, then we failed
+			if (time() - $time_start > 14) {
+				global $IWP_admin;
+				if (isset($IWP_admin->logged) && is_array($IWP_admin->logged)) {
+					$IWP_admin->logged[] = sprintf(__('The %s connection timed out; if you entered the server correctly, then this is usually caused by a firewall blocking the connection - you should check with your web hosting company.', 'IWP'), 'FTP');
+				} else {
+					global $iwp_backup_core;
+					$iwp_backup_core->log(sprintf(__('The %s connection timed out; if you entered the server correctly, then this is usually caused by a firewall blocking the connection - you should check with your web hosting company.', 'InfiniteWP'), 'FTP'), 'error');
+				}
+			}
+	
+			return false;
+	
+		}
+	 
+		function curl_progress_function($download_size, $downloaded_size, $upload_size, $uploaded_size) {
+	
+			if ($uploaded_size<1) return;
+	
+			global $iwp_backup_core;
+	
+			$percent = 100*($uploaded_size+$this->upload_from)/$this->upload_size;
+	
+			// Log every megabyte or at least every 20%
+			if ($percent > $this->upload_last_recorded_percent + 20 || $uploaded_size > $this->uploaded_bytes + 1048576) {
+				$iwp_backup_core->record_uploaded_chunk(round($percent, 1), '', $this->upload_local_path);
+				$this->upload_last_recorded_percent=floor($percent);
+				$this->uploaded_bytes = $uploaded_size;
+			}
+	
+		}
+	
+		public function put($local_file_path, $remote_file_path, $mode = FTP_BINARY, $resume = false, $iwp_backup_core = false) {
+	
+			$file_size = filesize($local_file_path);
+	
+			$existing_size = 0;
+			if ($resume) {
+	
+				if ($this->curl_handle) {
+					if (true === $this->curl_handle) $this->connect();
+					curl_setopt($this->curl_handle, CURLOPT_URL, 'ftps://'.$this->host.'/'.$remote_file_path);
+					curl_setopt($this->curl_handle, CURLOPT_NOBODY, true);
+					curl_setopt($this->curl_handle, CURLOPT_HEADER, false);
+	
+					// curl_setopt($this->curl_handle, CURLOPT_FORBID_REUSE, true);
+	
+					$getsize = curl_exec($this->curl_handle);
+					if ($getsize) {
+						$sizeinfo = curl_getinfo($this->curl_handle);
+						$existing_size = $sizeinfo['download_content_length'];
+					} else {
+						if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) $IWP_MMB_Backup_Core->log("Curl: upload error: ".curl_error($this->curl_handle));
+					}
+				} else {
+					$existing_size = ftp_size($this->conn_id, $remote_file_path);
+				}
+				// In fact curl can return -1 as the value, for a non-existant file
+				if ($existing_size <=0) {
+					$resume = false;
+					$existing_size = 0;
+				} else {
+					if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) $IWP_MMB_Backup_Core->log("File already exists at remote site: size $existing_size. Will attempt resumption.");
+					if ($existing_size >= $file_size) {
+						if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) $IWP_MMB_Backup_Core->log("File is apparently already completely uploaded");
+						return true;
+					}
+				}
+			}
+	
+			// From here on, $file_size is only used for logging calculations. We want to avoid divsion by zero.
+			$file_size = max($file_size, 1);
+	
+			if (!$fh = fopen($local_file_path, 'rb')) return false;
+			if ($existing_size) fseek($fh, $existing_size);
+	
+			// FTPS (i.e. implicit encryption)
+			if ($this->curl_handle) {
+				// Reset the curl object (because otherwise we get errors that make no sense)
+				$this->connect();
+				if (version_compare(phpversion(), '5.3.0', '>=')) {
+					curl_setopt($this->curl_handle, CURLOPT_PROGRESSFUNCTION, array($this, 'curl_progress_function'));
+					curl_setopt($this->curl_handle, CURLOPT_NOPROGRESS, false);
+				}
+				$this->upload_local_path = $local_file_path;
+				$this->upload_last_recorded_percent = 0;
+				$this->upload_size = max($file_size, 1);
+				$this->upload_from = $existing_size;
+				$this->uploaded_bytes = $existing_size;
+				curl_setopt($this->curl_handle, CURLOPT_URL, 'ftps://'.$this->host.'/'.$remote_file_path);
+				if ($existing_size) curl_setopt($this->curl_handle, CURLOPT_FTPAPPEND, true);
+	
+				// DOn't set CURLOPT_UPLOAD=true before doing the size check - it results in a bizarre error
+				curl_setopt($this->curl_handle, CURLOPT_UPLOAD, true);
+				curl_setopt($this->curl_handle, CURLOPT_INFILE, $fh);
+				$output = curl_exec($this->curl_handle);
+				fclose($fh);
+				if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core') && !$output) {
+					$iwp_backup_core->log("FTPS error: ".curl_error($this->curl_handle));
+				} elseif (true === $iwp_backup_core && !$output) {
+					echo __('Error:', 'InfiniteWP').' '.curl_error($this->curl_handle)."\n";
+				}
+				// Mark as used
+				$this->curl_handle = true;
+				return $output;
+			}
+	
+			$ret = ftp_nb_fput($this->conn_id, $remote_file_path, $fh, FTP_BINARY, $existing_size);
+	
+			// $existing_size can now be re-purposed
+	
+			while (FTP_MOREDATA == $ret) {
+				if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) {
+					$new_size = ftell($fh);
+					if ($new_size - $existing_size > 524288) {
+						$existing_size = $new_size;
+						$percent = round(100*$new_size/$file_size, 1);
+						$iwp_backup_core->record_uploaded_chunk($percent, '', $local_file_path);
+					}
+				}
+				// Continue upload
+				$ret = ftp_nb_continue($this->conn_id);
+			}
+	
+			fclose($fh);
+	
+			if (FTP_FINISHED != $ret) {
+				if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) $iwp_backup_core->log("FTP upload: error ($ret)");
+				return false;
+			}
+	
+			return true;
+	
+		}
+	 
+	
+		public function get($local_file_path, $remote_file_path, $mode = FTP_BINARY, $resume = false, $iwp_backup_core = false) {
+	
+			$file_last_size = 0;
+	
+			if ($resume) {
+				if (!$fh = fopen($local_file_path, 'ab')) return false;
+				// @codingStandardsIgnoreLine
+				clearstatcache($local_file_path);
+				$file_last_size = filesize($local_file_path);
 			} else {
-				// Add back the previous PHP messages
-				if (isset($save_array)) $IWP_admin->logged = array_merge($save_array, $IWP_admin->logged);
+				if (!$fh = fopen($local_file_path, 'wb')) return false;
+			}
+	
+			// Implicit FTP, for which we use curl (since PHP's native FTP functions don't handle implicit FTP)
+			if ($this->curl_handle) {
+				if ($resume) curl_setopt($this->curl_handle, CURLOPT_RESUME_FROM, $resume);
+				curl_setopt($this->curl_handle, CURLOPT_NOBODY, false);
+				curl_setopt($this->curl_handle, CURLOPT_URL, 'ftps://'.$this->host.'/'.$remote_file_path);
+				curl_setopt($this->curl_handle, CURLOPT_UPLOAD, false);
+				curl_setopt($this->curl_handle, CURLOPT_FILE, $fh);
+				$output = curl_exec($this->curl_handle);
+				if ($output) {
+					if ($iwp_backup_core) $iwp_backup_core->log("FTP fetch: fetch complete");
+				} else {
+					if ($iwp_backup_core) $iwp_backup_core->log("FTP fetch: fetch failed");
+				}
+				return $output;
+			}
+	
+			$ret = ftp_nb_fget($this->conn_id, $fh, $remote_file_path, $mode, $file_last_size);
+	
+			if (false == $ret) return false;
+	
+			while (FTP_MOREDATA == $ret) {
+	
+				if ($iwp_backup_core) {
+					$file_now_size = filesize($local_file_path);
+					if ($file_now_size - $file_last_size > 524288) {
+						$iwp_backup_core->log("FTP fetch: file size is now: ".sprintf("%0.2f", filesize($local_file_path)/1048576)." MB");
+						$file_last_size = $file_now_size;
+					}
+					clearstatcache();
+				}
+	
+				$ret = ftp_nb_continue($this->conn_id);
+			}
+	
+			fclose($fh);
+	
+			if (FTP_FINISHED == $ret) {
+				if ($iwp_backup_core) $iwp_backup_core->log("FTP fetch: fetch complete");
+				return true;
+			} else {
+				if ($iwp_backup_core) $iwp_backup_core->log("FTP fetch: fetch failed");
+				return false;
+			}
+	
+		}
+	
+		public function chmod($permissions, $remote_filename) {
+			if ($this->is_octal($permissions)) {
+				$result = ftp_chmod($this->conn_id, $permissions, $remote_filename);
+				return ($result) ? true : false;
+			} else {
+				throw new Exception('$permissions must be an octal number');
 			}
 		}
-
-		// If we got here, then we failed
-		if (time() - $time_start > 14) {
-			global $IWP_admin;
-			if (isset($IWP_admin->logged) && is_array($IWP_admin->logged)) {
-				$IWP_admin->logged[] = sprintf(__('The %s connection timed out; if you entered the server correctly, then this is usually caused by a firewall blocking the connection - you should check with your web hosting company.', 'IWP'), 'FTP');
-			} else {
-				global $iwp_backup_core;
-				$iwp_backup_core->log(sprintf(__('The %s connection timed out; if you entered the server correctly, then this is usually caused by a firewall blocking the connection - you should check with your web hosting company.', 'InfiniteWP'), 'FTP'), 'error');
-			}
+	 
+		public function chdir($directory) {
+			ftp_chdir($this->conn_id, $directory);
 		}
-
-		return false;
-
-	}
- 
-	function curl_progress_function($download_size, $downloaded_size, $upload_size, $uploaded_size) {
-
-		if ($uploaded_size<1) return;
-
-		global $iwp_backup_core;
-
-		$percent = 100*($uploaded_size+$this->upload_from)/$this->upload_size;
-
-		// Log every megabyte or at least every 20%
-		if ($percent > $this->upload_last_recorded_percent + 20 || $uploaded_size > $this->uploaded_bytes + 1048576) {
-			$iwp_backup_core->record_uploaded_chunk(round($percent, 1), '', $this->upload_local_path);
-			$this->upload_last_recorded_percent=floor($percent);
-			$this->uploaded_bytes = $uploaded_size;
-		}
-
-	}
-
-	public function put($local_file_path, $remote_file_path, $mode = FTP_BINARY, $resume = false, $iwp_backup_core = false) {
-
-		$file_size = filesize($local_file_path);
-
-		$existing_size = 0;
-		if ($resume) {
-
+	 
+		public function delete($remote_file_path) {
+	
 			if ($this->curl_handle) {
 				if (true === $this->curl_handle) $this->connect();
 				curl_setopt($this->curl_handle, CURLOPT_URL, 'ftps://'.$this->host.'/'.$remote_file_path);
-				curl_setopt($this->curl_handle, CURLOPT_NOBODY, true);
-				curl_setopt($this->curl_handle, CURLOPT_HEADER, false);
-
-				// curl_setopt($this->curl_handle, CURLOPT_FORBID_REUSE, true);
-
-				$getsize = curl_exec($this->curl_handle);
-				if ($getsize) {
-					$sizeinfo = curl_getinfo($this->curl_handle);
-					$existing_size = $sizeinfo['download_content_length'];
-				} else {
-					if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) $IWP_MMB_Backup_Core->log("Curl: upload error: ".curl_error($this->curl_handle));
-				}
+				curl_setopt($this->curl_handle, CURLOPT_RETURNTRANSFER, true);
+				curl_setopt($this->curl_handle, CURLOPT_QUOTE, array('DELE '.$remote_file_path));
+				// Unset some (possibly) previously-set options
+				curl_setopt($this->curl_handle, CURLOPT_UPLOAD, false);
+				curl_setopt($this->curl_handle, CURLOPT_INFILE, STDIN);
+				$output = curl_exec($this->curl_handle);
+				return $output;
+			}
+	
+			return (ftp_delete($this->conn_id, $remote_file_path)) ? true : false;
+	
+		}
+	 
+		public function make_dir($directory) {
+			if (ftp_mkdir($this->conn_id, $directory)) {
+				return true;
 			} else {
-				$existing_size = ftp_size($this->conn_id, $remote_file_path);
+				return false;
 			}
-			// In fact curl can return -1 as the value, for a non-existant file
-			if ($existing_size <=0) {
-				$resume = false;
-				$existing_size = 0;
+		}
+	 
+		public function rename($old_name, $new_name) {
+			if (ftp_rename($this->conn_id, $old_name, $new_name)) {
+				return true;
 			} else {
-				if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) $IWP_MMB_Backup_Core->log("File already exists at remote site: size $existing_size. Will attempt resumption.");
-				if ($existing_size >= $file_size) {
-					if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) $IWP_MMB_Backup_Core->log("File is apparently already completely uploaded");
-					return true;
-				}
+				return false;
 			}
 		}
-
-		// From here on, $file_size is only used for logging calculations. We want to avoid divsion by zero.
-		$file_size = max($file_size, 1);
-
-		if (!$fh = fopen($local_file_path, 'rb')) return false;
-		if ($existing_size) fseek($fh, $existing_size);
-
-		// FTPS (i.e. implicit encryption)
-		if ($this->curl_handle) {
-			// Reset the curl object (because otherwise we get errors that make no sense)
-			$this->connect();
-			if (version_compare(phpversion(), '5.3.0', '>=')) {
-				curl_setopt($this->curl_handle, CURLOPT_PROGRESSFUNCTION, array($this, 'curl_progress_function'));
-				curl_setopt($this->curl_handle, CURLOPT_NOPROGRESS, false);
+	 
+		public function remove_dir($directory) {
+			return ftp_rmdir($this->conn_id, $directory);
+		}
+	 
+		public function dir_list($directory) {
+			if ($this->curl_handle) {
+				// Can't get this to work - it might just be the vsftpd server I am testing on; it hangs strangely. But this means I can't test it.
+				return new WP_Error('unsupported_op', sprintf(__('The InfiniteWP module for this file access method (%s) does not support listing files', 'InfiniteWP'), 'FTP (SSL/Implicit)'));
+				if (true === $this->curl_handle) $this->connect();
+				curl_setopt($this->curl_handle, CURLOPT_URL, 'ftps://'.$this->host.'/'.trailingslashit($directory));
+				curl_setopt($this->curl_handle, CURLOPT_RETURNTRANSFER, true);
+		// curl_setopt($this->curl_handle, CURLOPT_FTPLISTONLY, true);
+		// curl_setopt($this->curl_handle, CURLOPT_POSTQUOTE, array('LIST'));
+				curl_setopt($this->curl_handle, CURLOPT_TIMEOUT, 10);
+				$output = curl_exec($this->curl_handle);
+				return $output;
 			}
-			$this->upload_local_path = $local_file_path;
-			$this->upload_last_recorded_percent = 0;
-			$this->upload_size = max($file_size, 1);
-			$this->upload_from = $existing_size;
-			$this->uploaded_bytes = $existing_size;
-			curl_setopt($this->curl_handle, CURLOPT_URL, 'ftps://'.$this->host.'/'.$remote_file_path);
-			if ($existing_size) curl_setopt($this->curl_handle, CURLOPT_FTPAPPEND, true);
-
-			// DOn't set CURLOPT_UPLOAD=true before doing the size check - it results in a bizarre error
-			curl_setopt($this->curl_handle, CURLOPT_UPLOAD, true);
-			curl_setopt($this->curl_handle, CURLOPT_INFILE, $fh);
-			$output = curl_exec($this->curl_handle);
-			fclose($fh);
-			if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core') && !$output) {
-				$iwp_backup_core->log("FTPS error: ".curl_error($this->curl_handle));
-			} elseif (true === $iwp_backup_core && !$output) {
-				echo __('Error:', 'InfiniteWP').' '.curl_error($this->curl_handle)."\n";
-			}
-			// Mark as used
-			$this->curl_handle = true;
-			return $output;
+	
+			return ftp_nlist($this->conn_id, $directory);
 		}
-
-		$ret = ftp_nb_fput($this->conn_id, $remote_file_path, $fh, FTP_BINARY, $existing_size);
-
-		// $existing_size can now be re-purposed
-
-		while (FTP_MOREDATA == $ret) {
-			if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) {
-				$new_size = ftell($fh);
-				if ($new_size - $existing_size > 524288) {
-					$existing_size = $new_size;
-					$percent = round(100*$new_size/$file_size, 1);
-					$iwp_backup_core->record_uploaded_chunk($percent, '', $local_file_path);
-				}
-			}
-			// Continue upload
-			$ret = ftp_nb_continue($this->conn_id);
+	 
+		public function cdup() {
+			return ftp_cdup($this->conn_id);
 		}
-
-		fclose($fh);
-
-		if (FTP_FINISHED != $ret) {
-			if (is_a($iwp_backup_core, 'IWP_MMB_Backup_Core')) $iwp_backup_core->log("FTP upload: error ($ret)");
-			return false;
+	 
+		public function size($f) {
+			return ($this->curl_handle) ? false : ftp_size($this->conn_id, $f);
 		}
-
-		return true;
-
-	}
- 
-
-	public function get($local_file_path, $remote_file_path, $mode = FTP_BINARY, $resume = false, $iwp_backup_core = false) {
-
-		$file_last_size = 0;
-
-		if ($resume) {
-			if (!$fh = fopen($local_file_path, 'ab')) return false;
-			// @codingStandardsIgnoreLine
-			clearstatcache($local_file_path);
-			$file_last_size = filesize($local_file_path);
-		} else {
-			if (!$fh = fopen($local_file_path, 'wb')) return false;
+	
+	
+		public function current_dir() {
+			return ftp_pwd($this->conn_id);
 		}
-
-		// Implicit FTP, for which we use curl (since PHP's native FTP functions don't handle implicit FTP)
-		if ($this->curl_handle) {
-			if ($resume) curl_setopt($this->curl_handle, CURLOPT_RESUME_FROM, $resume);
-			curl_setopt($this->curl_handle, CURLOPT_NOBODY, false);
-			curl_setopt($this->curl_handle, CURLOPT_URL, 'ftps://'.$this->host.'/'.$remote_file_path);
-			curl_setopt($this->curl_handle, CURLOPT_UPLOAD, false);
-			curl_setopt($this->curl_handle, CURLOPT_FILE, $fh);
-			$output = curl_exec($this->curl_handle);
-			if ($output) {
-				if ($iwp_backup_core) $iwp_backup_core->log("FTP fetch: fetch complete");
-			} else {
-				if ($iwp_backup_core) $iwp_backup_core->log("FTP fetch: fetch failed");
-			}
-			return $output;
+	 
+		private function is_octal($i) {
+			return decoct(octdec($i)) == $i;
 		}
-
-		$ret = ftp_nb_fget($this->conn_id, $fh, $remote_file_path, $mode, $file_last_size);
-
-		if (false == $ret) return false;
-
-		while (FTP_MOREDATA == $ret) {
-
-			if ($iwp_backup_core) {
-				$file_now_size = filesize($local_file_path);
-				if ($file_now_size - $file_last_size > 524288) {
-					$iwp_backup_core->log("FTP fetch: file size is now: ".sprintf("%0.2f", filesize($local_file_path)/1048576)." MB");
-					$file_last_size = $file_now_size;
-				}
-				clearstatcache();
-			}
-
-			$ret = ftp_nb_continue($this->conn_id);
+	 
+		public function __destruct() {
+			if ($this->conn_id) ftp_close($this->conn_id);
 		}
-
-		fclose($fh);
-
-		if (FTP_FINISHED == $ret) {
-			if ($iwp_backup_core) $iwp_backup_core->log("FTP fetch: fetch complete");
-			return true;
-		} else {
-			if ($iwp_backup_core) $iwp_backup_core->log("FTP fetch: fetch failed");
-			return false;
-		}
-
-	}
-
-	public function chmod($permissions, $remote_filename) {
-		if ($this->is_octal($permissions)) {
-			$result = ftp_chmod($this->conn_id, $permissions, $remote_filename);
-			return ($result) ? true : false;
-		} else {
-			throw new Exception('$permissions must be an octal number');
-		}
-	}
- 
-	public function chdir($directory) {
-		ftp_chdir($this->conn_id, $directory);
-	}
- 
-	public function delete($remote_file_path) {
-
-		if ($this->curl_handle) {
-			if (true === $this->curl_handle) $this->connect();
-			curl_setopt($this->curl_handle, CURLOPT_URL, 'ftps://'.$this->host.'/'.$remote_file_path);
-			curl_setopt($this->curl_handle, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($this->curl_handle, CURLOPT_QUOTE, array('DELE '.$remote_file_path));
-			// Unset some (possibly) previously-set options
-			curl_setopt($this->curl_handle, CURLOPT_UPLOAD, false);
-			curl_setopt($this->curl_handle, CURLOPT_INFILE, STDIN);
-			$output = curl_exec($this->curl_handle);
-			return $output;
-		}
-
-		return (ftp_delete($this->conn_id, $remote_file_path)) ? true : false;
-
-	}
- 
-	public function make_dir($directory) {
-		if (ftp_mkdir($this->conn_id, $directory)) {
-			return true;
-		} else {
-			return false;
-		}
-	}
- 
-	public function rename($old_name, $new_name) {
-		if (ftp_rename($this->conn_id, $old_name, $new_name)) {
-			return true;
-		} else {
-			return false;
-		}
-	}
- 
-	public function remove_dir($directory) {
-		return ftp_rmdir($this->conn_id, $directory);
-	}
- 
-	public function dir_list($directory) {
-		if ($this->curl_handle) {
-			// Can't get this to work - it might just be the vsftpd server I am testing on; it hangs strangely. But this means I can't test it.
-			return new WP_Error('unsupported_op', sprintf(__('The InfiniteWP module for this file access method (%s) does not support listing files', 'InfiniteWP'), 'FTP (SSL/Implicit)'));
-			if (true === $this->curl_handle) $this->connect();
-			curl_setopt($this->curl_handle, CURLOPT_URL, 'ftps://'.$this->host.'/'.trailingslashit($directory));
-			curl_setopt($this->curl_handle, CURLOPT_RETURNTRANSFER, true);
-// curl_setopt($this->curl_handle, CURLOPT_FTPLISTONLY, true);
-// curl_setopt($this->curl_handle, CURLOPT_POSTQUOTE, array('LIST'));
-			curl_setopt($this->curl_handle, CURLOPT_TIMEOUT, 10);
-			$output = curl_exec($this->curl_handle);
-			return $output;
-		}
-
-		return ftp_nlist($this->conn_id, $directory);
-	}
- 
-	public function cdup() {
-		return ftp_cdup($this->conn_id);
-	}
- 
-	public function size($f) {
-		return ($this->curl_handle) ? false : ftp_size($this->conn_id, $f);
-	}
-
-
-	public function current_dir() {
-		return ftp_pwd($this->conn_id);
-	}
- 
-	private function is_octal($i) {
-		return decoct(octdec($i)) == $i;
-	}
- 
-	public function __destruct() {
-		if ($this->conn_id) ftp_close($this->conn_id);
 	}
 }

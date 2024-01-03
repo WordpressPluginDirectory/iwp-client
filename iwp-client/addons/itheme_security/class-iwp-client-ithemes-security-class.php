@@ -1,5 +1,8 @@
 <?php
 
+if ( ! defined('ABSPATH') )
+    die();
+
 final class IWP_MMB_IThemes_Security extends IWP_MMB_Core {
 
     private static $available_modules;

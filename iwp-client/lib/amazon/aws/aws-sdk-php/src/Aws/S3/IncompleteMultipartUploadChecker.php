@@ -47,8 +47,8 @@ class IncompleteMultipartUploadChecker extends AbstractBackoffStrategy
         if ($response && $request->getMethod() === 'POST'
             && $request instanceof EntityEnclosingRequestInterface
             && $response->getStatusCode() == 200
-            && strpos($request->getBody(), '<CompleteMultipartUpload xmlns') !== false
-            && strpos($response->getBody(), '<CompleteMultipartUploadResult xmlns') === false
+            && !empty($request->getBody()) && strpos($request->getBody(), '<CompleteMultipartUpload xmlns') !== false
+            && !empty($response->getBody()) && strpos($response->getBody(), '<CompleteMultipartUploadResult xmlns') === false
         ) {
             return true;
         }

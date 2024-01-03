@@ -83,7 +83,7 @@ class IWP_MMB_UploadModule_ftp extends IWP_MMB_UploadModule {
 		}
 		foreach($backup_array as $file) {
 			$fullpath = $iwp_backup_dir.$file;
-			$iwp_backup_core->log("FTP upload attempt: $file -> ftp://".$opts['user']."@".$opts['host']."/${ftp_remote_path}${file}");
+			$iwp_backup_core->log("FTP upload attempt: $file -> ftp://".$opts['user']."@".$opts['host']."/".$ftp_remote_path.$file);
 			$timer_start = microtime(true);
 			$size_k = round(filesize($fullpath)/1024,1);
 			# Note :Setting $resume to true unnecessarily is not meant to be a problem. Only ever (Feb 2014) seen one weird FTP server where calling SIZE on a non-existent file did create a problem. So, this code just helps that case. (the check for non-empty upload_status[p] is being cautious.
@@ -207,9 +207,9 @@ class IWP_MMB_UploadModule_ftp extends IWP_MMB_UploadModule {
 		$ret = true;
 		foreach ($files as $file) {
 			if (@$ftp->delete($ftp_remote_path.$file)) {
-				$iwp_backup_core->log("FTP delete: succeeded (${ftp_remote_path}${file})");
+				$iwp_backup_core->log("FTP delete: succeeded (".$ftp_remote_path.$file.")");
 			} else {
-				$iwp_backup_core->log("FTP delete: failed (${ftp_remote_path}${file})");
+				$iwp_backup_core->log("FTP delete: failed (".$ftp_remote_path.$file.")");
 				$ret = false;
 			}
 		}

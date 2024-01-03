@@ -1,5 +1,8 @@
 <?php
 
+if ( ! defined('ABSPATH') )
+    die();
+
 class IWP_BACKUP_REPO_TEST {
 
 	public function repositoryTestConnection($account_info){

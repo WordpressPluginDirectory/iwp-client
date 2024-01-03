@@ -1,7 +1,6 @@
 <?php
-if(basename($_SERVER['SCRIPT_FILENAME']) == "wordfence.class.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
 class IWP_WORDFENCE extends IWP_MMB_Core
 {
     function __construct()

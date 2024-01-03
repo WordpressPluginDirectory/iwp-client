@@ -10,6 +10,7 @@ class IWP_MMB_UploadModule_googledrive extends IWP_MMB_UploadModule {
 	private $service;
 	private $client;
 	private $ids_from_paths;
+	public  $root_id;
 
 	public function get_supported_features() {
 		// This options format is handled via only accessing options via $this->get_options()
@@ -223,7 +224,7 @@ class IWP_MMB_UploadModule_googledrive extends IWP_MMB_UploadModule {
 			global $iwp_backup_core;
 			$iwp_backup_core->log(sprintf(__('The %s authentication could not go ahead, because something else on your site is breaking it. Try disabling your other plugins and switching to a default theme. (Specifically, you are looking for the component that sends output (most likely PHP warnings/errors) before the page begins. Turning off any debugging settings may also help).', ''), 'Google Drive'), 'error');
 		} else {
-			header('Location: https://accounts.google.com/o/oauth2/auth?'.http_build_query($params, null, '&'));
+			header('Location: https://accounts.google.com/o/oauth2/auth?'.http_build_query($params, '', '&'));
 		}
 	}
 
@@ -768,7 +769,7 @@ class IWP_MMB_UploadModule_googledrive extends IWP_MMB_UploadModule {
 			$iwp_backup_core->log("Google Drive delete: failed to access parent folder: ".$e->getMessage().' (line: '.$e->getLine().', file: '.$e->getFile().')');
 			return false;
 		}
-
+		$found = false;
 		foreach ($sub_items as $item) {
 			if ($found) continue;
 			$title = "(unknown)";

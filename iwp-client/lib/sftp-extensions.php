@@ -1,5 +1,8 @@
 <?php
 
+if ( ! defined('ABSPATH') )
+    die();
+
 /*
 Methods to define when extending this class (can use $this->storage and $this->options where relevant):
 do_bootstrap($possible_options_array) # Return a WP_Error object if something goes wrong
@@ -32,6 +35,8 @@ abstract class IWP_MMB_RemoteStorage_Extension extends IWP_MMB_UploadModule {
 	protected $options;
 
 	private $chunked;
+
+	public $test_button;
 
 	public function __construct($method, $description, $chunked = true, $test_button = true) {
 
@@ -121,7 +126,7 @@ abstract class IWP_MMB_RemoteStorage_Extension extends IWP_MMB_UploadModule {
 			
 		} catch (Exception $e) {
 			global $iwp_backup_core;
-			$iwp_backup_core->log('ERROR: '.$this->method.": $file: Failed to list files: ".$e->getMessage().' (code: '.$e->getCode().', line: '.$e->getLine().', file: '.$e->getFile().')');
+			$iwp_backup_core->log('ERROR: '.$this->method.": Failed to list files: ".$e->getMessage().' (code: '.$e->getCode().', line: '.$e->getLine().', file: '.$e->getFile().')');
 			return new WP_Error('list_failed', $this->description.': '.__('failed to list files', 'InfiniteWP'));
 		}
 

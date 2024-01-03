@@ -15,9 +15,8 @@
  * Copyright (c) 2011 Prelovac Media
  * www.prelovac.com
  **************************************************************/
-if(basename($_SERVER['SCRIPT_FILENAME']) == "stats.class.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
 
 class IWP_MMB_Stats extends IWP_MMB_Core
 {
@@ -648,7 +647,7 @@ class IWP_MMB_Stats extends IWP_MMB_Core
         /** @var $wpdb wpdb */
         global $current_user, $wpdb;
         $user_blogs    = get_blogs_of_user($current_user->ID);
-        $network_blogs = (array)$wpdb->get_results("select `blog_id`, `site_id` from `{$wpdb->blogs}`");
+        $network_blogs = $wpdb->get_results("select `blog_id`, `site_id` from `{$wpdb->blogs}`", ARRAY_A);
         $mainBlogId    = defined('BLOG_ID_CURRENT_SITE') ? BLOG_ID_CURRENT_SITE : false;
 
         if (/*$this->network_admin_install != '1' || !is_super_admin($current_user->ID)||*/ empty($network_blogs)) {
@@ -657,16 +656,16 @@ class IWP_MMB_Stats extends IWP_MMB_Core
 
         $stats = array('network_blogs' => array(), 'other_blogs' => array());
         foreach ($network_blogs as $details) {
-            if (($mainBlogId !== false && $details->blog_id == $mainBlogId) || ($mainBlogId === false && $details->site_id == $details->blog_id)) {
+            if (($mainBlogId !== false && $details['blog_id'] == $mainBlogId) || ($mainBlogId === false && $details['site_id'] == $details['blog_id'])) {
                 continue;
             } else {
-                $data = get_blog_details($details->blog_id);
-                if (in_array($details->blog_id, array_keys($user_blogs))) {
+                $data = get_blog_details($details['blog_id']);
+                if (is_array($user_blogs) && in_array($details['blog_id'], array_keys($user_blogs))) {
                     $stats['network_blogs'][] = $data->siteurl;
                 } else {
                     $user = get_users(
                         array(
-                            'blog_id' => $details->blog_id,
+                            'blog_id' => $details['blog_id'],
                             'number'  => 1,
                         )
                     );
@@ -738,7 +737,7 @@ class IWP_MMB_Stats extends IWP_MMB_Core
             end($iwp_mmb_user_hits);
             $last_key_date = key($iwp_mmb_user_hits);
             $current_date  = date('Y-m-d');
-            if ($last_key_date != $curent_date)
+            if ($last_key_date != $current_date)
                 $this->set_hit_count(true);
         }
         

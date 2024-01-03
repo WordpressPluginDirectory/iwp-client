@@ -683,21 +683,23 @@ class IWP_MMB_Backup_Multicall extends IWP_MMB_Core
 		$backup_settings_values = $this -> backup_settings_vals;	
 		$backup_settings_values['actual_file_size'] = iwp_mmb_get_file_size($backup_file);
 		update_option('iwp_client_multi_backup_temp_values', $backup_settings_values);
-		
 		if (isset($account_info['iwp_ftp']) && !empty($account_info['iwp_ftp'])) {
 			$account_info['iwp_ftp']['backup_file'] = $backup_file;
 			iwp_mmb_print_flush('FTP upload: Start');
 			$ftp_result                             = $this->ftp_backup($historyID, $account_info['iwp_ftp']);
 			if(!$ftp_result)
 			{
-				if($del_host_file){
+				if(!empty($backup_settings_values['del_host_file']) && $backup_settings_values['del_host_file']){
 					$this->unlinkBackupFiles($backup_file);
 				}
 				return array('error' => "Unexpected Error", 'error_code' => "unexpected_error");
 			}
 			else if(is_array($ftp_result) && isset($ftp_result['error'])){
-				if($del_host_file){
-					$this->unlinkBackupFiles($backup_file);
+				if(!empty($backup_settings_values['del_host_file']) && $backup_settings_values['del_host_file']){
+					if($ftp_result['error_code'] !== 'ftp_nb_fput_not_permitted_error'){
+
+						$this->unlinkBackupFiles($backup_file);
+					}
 				}
 				return $ftp_result;
 			}
@@ -900,9 +902,6 @@ class IWP_MMB_Backup_Multicall extends IWP_MMB_Core
 			@rmdir(IWP_DB_DIR); */
 			if (!$result) {
 				return $this->statusLog($historyID, array('stage' => 'backupDBZip', 'status' => 'error', 'statusMsg' => 'Database zip failed', 'statusCode' => 'database_zip_failed'));
-				return array(
-				'error' => 'Failed to zip database (pclZip - ' . $archive->error_code . '): .' . $archive->error_string
-				);
 			}
 			
 		}
@@ -1044,10 +1043,10 @@ class IWP_MMB_Backup_Multicall extends IWP_MMB_Core
 			if($left_out_table != $table[0])
 			{
 				//drop existing table
-				$dump_data    = "DROP TABLE IF EXISTS $table[0];";
+				$dump_data    = "DROP TABLE IF EXISTS `$table[0]`;";
 				file_put_contents($file, $dump_data, FILE_APPEND);
 				//create table
-				$create_table = $wpdb->get_row("SHOW CREATE TABLE $table[0]", ARRAY_N);
+				$create_table = $wpdb->get_row("SHOW CREATE TABLE `$table[0]`", ARRAY_N);
 				$dump_data = "\n\n" . $create_table[1] . ";\n\n";
 				$response_array[$table[0]] = 0;
 				file_put_contents($file, $dump_data, FILE_APPEND);
@@ -1069,7 +1068,7 @@ class IWP_MMB_Backup_Multicall extends IWP_MMB_Core
 			$count = $wpdb->get_var("SELECT count(*) FROM $table[0]");
 			$count_field = 1;
 			
-			$table_fields = $wpdb->get_results("SHOW COLUMNS FROM $table[0]", ARRAY_A);
+			$table_fields = $wpdb->get_results("SHOW COLUMNS FROM `$table[0]`", ARRAY_A);
 			$no_of_cols = count($table_fields);
 			$initialCount = 0;
 			$done_count = 0;
@@ -1710,7 +1709,11 @@ class IWP_MMB_Backup_Multicall extends IWP_MMB_Core
 					$result_arr['response_data']['p_filedescr_list'] = $p_filedescr_list;
 					unset($p_filedescr_list);
 					$result_arr['response_data']['next_file_index'] = $next_file_index;
-					$result_arr['response_data']['complete_folder_list'] = $p_filedescr_list_array['complete_folder_list'];
+					if (isset($p_filedescr_list_array['complete_folder_list'])) {
+						$result_arr['response_data']['complete_folder_list'] = $p_filedescr_list_array['complete_folder_list'];
+					}else{
+						$result_arr['response_data']['complete_folder_list'] = array();
+					}
 					unset($p_filedescr_list_array);
 					$this->statusLog($this -> hisID, array('stage' => 'gettingFileList', 'status' => 'processing', 'statusMsg' => 'gettingFileListInMultiCall','responseParams' => $result_arr));
 					$resArray = array();
@@ -2124,7 +2127,7 @@ class IWP_MMB_Backup_Multicall extends IWP_MMB_Core
 		$exclude_extensions = explode(",",$requestParams['args']['exclude_extensions']);
 		$zip_split_size = $requestParams['args']['zip_split_size'];
 		
-		if($backup_settings_values['dbFileHashValue'][$historyID])
+		if(isset($backup_settings_values['dbFileHashValue']) && $backup_settings_values['dbFileHashValue'][$historyID])
 		$dbFileHashValue = $backup_settings_values['dbFileHashValue'][$historyID];
 		else
 		$dbFileHashValue = array();
@@ -2810,7 +2813,7 @@ class IWP_MMB_Backup_Multicall extends IWP_MMB_Core
 		$this->cleanup_failed_backups($rows);
 		$task_res = array();
 		foreach($rows as $key => $value){
-			$task_results = unserialize($value['taskResults']);
+			$task_results = (!empty($value['taskResults']))?unserialize($value['taskResults']):array();
 			$requestParams = unserialize($value['requestParams']);
 			if(!empty($task_results['task_results'])){
 				foreach($task_results['task_results'] as $key => $data){
@@ -2832,7 +2835,7 @@ class IWP_MMB_Backup_Multicall extends IWP_MMB_Core
             return false;
         }
         foreach($rows as $key => $value){
-            $task_results = unserialize($value['taskResults']);
+            $task_results = (!empty($value['taskResults']))?unserialize($value['taskResults']):array();
             if(empty($task_results['task_results'])){
                 if ($rowCount > 0) {
                    $this->remove_failed_backups($value['ID']);
@@ -3977,6 +3980,7 @@ class IWP_MMB_Backup_Multicall extends IWP_MMB_Core
         global $wpdb;
         $query  = 'SHOW TABLE STATUS';
         $tables = $wpdb->get_results($query, ARRAY_A);
+		$table_string = '';
         foreach ($tables as $table) {
             if (in_array($table['Engine'], array(
                 'MyISAM',
@@ -4179,7 +4183,7 @@ class IWP_MMB_Backup_Multicall extends IWP_MMB_Core
 function ftp_backup($historyID,$args = '')
     {
 		//getting the settings
-		$this -> backup_settings_vals = get_option('iwp_client_multi_backup_temp_values', $backup_settings_values);
+		$this -> backup_settings_vals = get_option('iwp_client_multi_backup_temp_values');
 		$current_file_num = 0;
 		if($args == '')
 		{
@@ -4349,7 +4353,7 @@ function ftp_backup($historyID,$args = '')
 		if(!$file_size)
 		$file_size = 0;
 		
-		$real_size = filesize($local_file_path);
+		$real_size = filesize($backup_file);
 		//read the parts local file , if it is a second call start reading the file from the left out part which is at the offset of the remote file's filesize.
 		$fp = fopen($backup_file, 'r');
 		fseek($fp,$file_size);
@@ -4358,9 +4362,9 @@ function ftp_backup($historyID,$args = '')
 		if(!$ret || $ret == FTP_FAILED)
 		{
 			return array(
-                'error' => "FTP upload Error. ftp_nb_fput(): Append/Restart not permitted. This feature is required for multi-call backup upload via FTP to work. Please contact your WP site's hosting provider and ask them to fix the problem. You can try dropbox, Amazon S3 or Google Driver as an alternative to it.",
-                'partial' => 1, 'error_code' => 'ftp_nb_fput_not_permitted_error'
-            );
+				'error' => "FTP upload Error. ftp_nb_fput(): Append/Restart not permitted. This feature is required for multi-call backup upload via FTP to work. Please contact your WP site's hosting provider and ask them to fix the problem. You can try dropbox, Amazon S3 or Google Driver as an alternative to it.",
+				'partial' => 1, 'error_code' => 'ftp_nb_fput_not_permitted_error'
+			);
 		}
 		$resArray = array (
 		  'status' => 'partiallyCompleted',
@@ -4407,7 +4411,7 @@ function ftp_backup($historyID,$args = '')
 			} */
 			echo "backup not yet finished";
 			echo "real file size $real_size";
-			echo "FTP file size $size";
+			echo "FTP file size $file_size";
 			return $resArray;
 		}
 		else
@@ -4504,7 +4508,7 @@ function ftp_backup($historyID,$args = '')
 				return $new_s3_obj->postUploadS3Verification($backup_file, $destFile, $type, $as3_bucket, $as3_access_key, $as3_secure_key, $as3_bucket_region, $size1, $size2);
 			}
 			else{
-				return $this->postUploadS3VerificationBwdComp($backup_file, $destFile, $type, $as3_bucket, $as3_access_key, $as3_secure_key, $as3_bucket_region, $obj, $actual_file_size, $size1, $size2);
+				return $this->postUploadS3VerificationBwdComp($backup_file, $destFile, $obj, $type, $as3_bucket, $as3_access_key, $as3_secure_key, $as3_bucket_region, $actual_file_size, $size1, $size2);
 			}
 		}
 		else if($type == "ftp")
@@ -4529,7 +4533,8 @@ function ftp_backup($historyID,$args = '')
 		}
 	}
 	
-	function postUploadS3VerificationBwdComp($backup_file, $destFile, $type = "", $as3_bucket = "", $as3_access_key = "", $as3_secure_key = "", $as3_bucket_region = "", &$obj = "", $actual_file_size = "", $size1 = 0 , $size2 = 0, $return_size = false){
+	function postUploadS3VerificationBwdComp($backup_file, $destFile, $obj, $type = "", $as3_bucket = "", $as3_access_key = "", $as3_secure_key = "", $as3_bucket_region = "", $actual_file_size = "", $size1 = 0 , $size2 = 0, $return_size = false){
+
 		$response = $obj -> if_object_exists($as3_bucket, $destFile);
 		if($response == true)
 		{
@@ -4538,7 +4543,7 @@ function ftp_backup($historyID,$args = '')
 			$meta_response_array = $cfu_obj->convert_response_to_array($meta);
 			$s3_filesize = $meta_response_array['header']['content-length'];
 			if ($return_size == true) {
-				return $s3_file_size;
+				return $s3_filesize;
 			}
 			echo "S3 fileszie during verification - ".$s3_filesize;
 			if((($s3_filesize >= $size1 && $s3_filesize <= $actual_file_size) || ($s3_filesize <= $size2 && $s3_filesize >= $actual_file_size) || ($s3_filesize == $actual_file_size)) && ($s3_filesize != 0))
@@ -4601,7 +4606,7 @@ function ftp_backup($historyID,$args = '')
             
         } else {
         $port = $ftp_port ? $ftp_port : 21; //default port is 21
-        if ($ftp_ssl && function_exists('ftp_ssl_connect')) {
+        if (!empty($ftp_ssl) && function_exists('ftp_ssl_connect')) {
             $conn_id = ftp_ssl_connect($ftp_hostname,$port);
         } else if (function_exists('ftp_connect')) {
             $conn_id = ftp_connect($ftp_hostname,$port);
@@ -4844,6 +4849,9 @@ function ftp_backup($historyID,$args = '')
 						$dropbox_destination .=  '/'.$this->site_name;
 					}
 					$folders = explode('/',$dropbox_destination);
+					if (!isset($path)) {
+						$path = '';
+					}
 					foreach ($folders as $key => $name) {
 					    $path.=trim($name).'/';
 					}
@@ -5067,6 +5075,9 @@ function ftp_backup($historyID,$args = '')
 			    $dropbox_destination .=  '/'.$this->site_name;
 			}
 			$folders = explode('/',$dropbox_destination);
+			if (!isset($path)) {
+				$path = '';
+			}
 			foreach ($folders as $key => $name) {
 			    $path.=trim($name).'/';
 			}
@@ -6022,7 +6033,9 @@ function ftp_backup($historyID,$args = '')
 					$chunk = fread($handle, $upload_file_block_size);
 					$statusArray = $media->nextChunk($chunk, $resumeURI, $fileSizeUploaded);
 					$status = $statusArray['status'];
-					$resumeURI = $statusArray['resumeURI'];
+					if (isset($statusArray['resumeURI'])) {
+						$resumeURI = $statusArray['resumeURI'];
+					}
 					//$fileSizeUploaded = ftell($handle);
 					$fileSizeUploaded = $statusArray['progress'];
 					
@@ -6203,7 +6216,7 @@ function ftp_backup($historyID,$args = '')
                 $schedule_hour    = $schedule[0];
                 
                 if ($current_weekday > $schedule_weekday)
-                    $weekday_offset = 7 - ($week_day - $task_schedule[1]);
+                    $weekday_offset = 7 - ($schedule_weekday - $schedule[1]);
                 else
                     $weekday_offset = $schedule_weekday - $current_weekday;
                 
@@ -6498,7 +6511,7 @@ function ftp_backup($historyID,$args = '')
 								}
 								else
 								{
-									if (!empty($requestParams[$taskName]['requestParams'][$historyID]['account_info']) && $thisTask['historyID'] != $historyID) {
+									if (!empty($requestParams[$taskName]['requestParams'][$historyID]['account_info']) && !empty($thisTask['historyID']) && $thisTask['historyID'] != $historyID) {
 										$cloudFailedBackup[]= $this_backup_file;
 										$failedBackupHisID[$historyID]=$historyID;
 									}
@@ -6535,7 +6548,9 @@ function ftp_backup($historyID,$args = '')
             		if (!empty($backup['db'])) {
             			$results[] = $backup['db'];
             		}
-            		$results[] = $backup['backup_file_basename'];
+					if (!empty($backup['backup_file_basename'])) {
+            			$results[] = $backup['backup_file_basename'];
+            		}
             	}
             }
 
@@ -6693,8 +6708,6 @@ function ftp_backup($historyID,$args = '')
 		$before = array();
 		$tasks = $params['backups'];
 		if( !empty($tasks) ){
-			$iwp_mmb_backup = new IWP_MMB_Backup();
-			
 			if( function_exists( 'wp_next_scheduled' ) ){
 				if ( !wp_next_scheduled('iwp_client_backup_tasks') ) {
 					wp_schedule_event( time(), 'tenminutes', 'iwp_client_backup_tasks' );
@@ -6723,7 +6736,7 @@ function ftp_backup($historyID,$args = '')
 				}
 				
 				$before[$task['task_name']]['task_args'] = $task['args'];
-				$before[$task['task_name']]['task_args']['next'] = $iwp_mmb_backup->schedule_next($task['args']['type'], $task['args']['schedule']);
+				$before[$task['task_name']]['task_args']['next'] = $this->schedule_next($task['args']['type'], $task['args']['schedule']);
 			}
 		}
 		update_option('iwp_client_backup_tasks', $before);

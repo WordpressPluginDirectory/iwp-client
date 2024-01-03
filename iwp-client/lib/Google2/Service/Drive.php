@@ -28,6 +28,7 @@
  *
  * @author Google, Inc.
  */
+#[\AllowDynamicProperties]
 class Google_Service_Drive extends Google_Service
 {
   /** View and manage the files in your Google Drive. */

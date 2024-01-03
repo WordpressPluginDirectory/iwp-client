@@ -183,7 +183,7 @@ class IWP_MMB_Dropbox_API {
         }
         // Complete the chunked upload
         if ($isCommit) {
-            $filename = (is_string($filename)) ? $filename : basename($file);
+            $filename = (isset($filename) && is_string($filename)) ? $filename : basename($file);
             $params = array(
                 'cursor' => array(
                     'session_id' => $uploadID,
@@ -590,7 +590,7 @@ class IWP_MMB_Dropbox_API {
             $this->OAuth->setInFile(fread($handle, filesize($file)));
             fclose($handle);
 
-            $filename = (is_string($filename)) ? $filename : basename($file);
+            $filename = (!empty($filename) && is_string($filename)) ? $filename : basename($file);
             $path = '/' . $this->encodePath($path .'/'. $filename);
             $params = array(
                 'path' => $path,

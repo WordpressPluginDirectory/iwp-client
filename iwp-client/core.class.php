@@ -15,36 +15,41 @@
  * Copyright (c) 2011 Prelovac Media
  * www.prelovac.com
  **************************************************************/
- if(basename($_SERVER['SCRIPT_FILENAME']) == "core.class.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
 class IWP_MMB_Core extends IWP_MMB_Helper
 {
-    var $name;
-    var $slug;
-    var $settings;
-    var $remote_client;
-    var $comment_instance;
-    var $plugin_instance;
-    var $theme_instance;
-    var $wp_instance;
-    var $post_instance;
-    var $stats_instance;
-    var $search_instance;
-    var $links_instance;
-    var $user_instance;
-    var $backup_instance;
-    var $backup_new_instance;
-	var $wordfence_instance;
-	var $sucuri_instance;
-    var $installer_instance;
-    var $iwp_mmb_multisite;
-    var $network_admin_install;
+    public $name;
+    public $slug;
+    public $settings;
+    public $remote_client;
+    public $comment_instance;
+    public $plugin_instance;
+    public $theme_instance;
+    public $wp_instance;
+    public $post_instance;
+    public $stats_instance;
+    public $search_instance;
+    public $links_instance;
+    public $user_instance;
+    public $backup_instance;
+    public $backup_new_instance;
+	public $wordfence_instance;
+	public $sucuri_instance;
+    public $installer_instance;
+    public $iwp_mmb_multisite;
+    public $network_admin_install;
+    public $blc_get_blinks;
+    public $link_instance;
+    public $get_google_webmasters_crawls;
+    public $get_file_editor;
+    public $get_yoast_seo;
+    public $blogroll_instance;
 	
-	var $ithemessec_instance;
-	var $backup_repository_instance;
-	var $optimize_instance;
-	var $wp_purge_cache_instance;
+	public $ithemessec_instance;
+	public $backup_repository_instance;
+	public $optimize_instance;
+	public $wp_purge_cache_instance;
 	
     private $action_call;
     public  $request_params;
@@ -144,7 +149,6 @@ class IWP_MMB_Core extends IWP_MMB_Helper
 			'get_posts' => 'iwp_mmb_get_posts',
 			'delete_post' => 'iwp_mmb_delete_post',
 			'delete_posts' => 'iwp_mmb_delete_posts',
-			'edit_posts' => 'iwp_mmb_edit_posts',
 			'get_pages' => 'iwp_mmb_get_pages',
 			'delete_page' => 'iwp_mmb_delete_page',
 			

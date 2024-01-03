@@ -15,9 +15,8 @@
  * Copyright (c) 2011 Prelovac Media
  * www.prelovac.com
  **************************************************************/
-if(basename($_SERVER['SCRIPT_FILENAME']) == "installer.class.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
 class IWP_MMB_Installer extends IWP_MMB_Core
 {
     protected $upgrade_error_keys;
@@ -532,9 +531,12 @@ class IWP_MMB_Installer extends IWP_MMB_Core
         }
     }
     
-    function upgrade_plugins($plugins = false,$plugin_details = false,$userid = false)
+    function upgrade_plugins($plugins = array(),$plugin_details = false,$userid = false)
     {
 		global $iwp_activities_log_post_type, $iwp_mmb_activities_log;
+        if ($plugin_details == false) {
+            $plugin_details = array();
+        }
         if (!$plugins || empty($plugins))
             return array(
                 'error' => 'No plugin files for upgrade.', 'error_code' => 'no_plugin_files_for_upgrade'
@@ -549,6 +551,7 @@ class IWP_MMB_Installer extends IWP_MMB_Core
 			}
 		}
         $return = array();
+        $upgrade_msg = array();
         if (class_exists('Plugin_Upgrader')) {
             
 			if (!function_exists('wp_update_plugins'))
@@ -562,6 +565,7 @@ class IWP_MMB_Installer extends IWP_MMB_Core
 			$current = $this->iwp_mmb_get_transient('update_plugins');
 			if (!empty($result)) {
                 foreach ($result as $plugin_slug => $plugin_info) {
+                    $upgrade_msg[$plugin_slug] = $upgrader->skin->get_upgrade_messages();
                     if (!$plugin_info || is_wp_error($plugin_info)) {
                         $return[$plugin_slug] = array('error' => $this->parse_upgrade_response($upgrader->skin->get_upgrade_messages()), 'error_code' => 'upgrade_plugins_wp_error');
                     } else {
@@ -622,7 +626,8 @@ class IWP_MMB_Installer extends IWP_MMB_Core
                     }
                 }
                 return array(
-                    'upgraded' => $return
+                    'upgraded' => $return,
+                    'upgraded_msg' => $upgrade_msg
                 );
             } else
                 return array(
@@ -637,6 +642,12 @@ class IWP_MMB_Installer extends IWP_MMB_Core
     
     function upgrade_themes($themes = false,$theme_details = false,$userid = false)
     {
+        if ($themes == false) {
+            $themes = array();
+        }
+        if ($theme_details == false) {
+            $theme_details = array();
+        }
 		global $iwp_activities_log_post_type, $iwp_mmb_activities_log;
         if (!$themes || empty($themes))
             return array(
@@ -712,6 +723,7 @@ class IWP_MMB_Installer extends IWP_MMB_Core
             include_once(ABSPATH . 'wp-admin/includes/class-wp-upgrader.php');
         
         if (!$premium || empty($premium))
+            $premium = array();
             return array(
                 'error' => 'No premium files for upgrade.', 'error_code' => 'no_premium_files_for_upgrade'
             );

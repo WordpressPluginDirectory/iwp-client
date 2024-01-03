@@ -6,6 +6,9 @@
  *                                                          *
  ************************************************************/
 
+if ( ! defined('ABSPATH') )
+    die();
+
 class IWP_MMB_FixCompatibility 
 {
 

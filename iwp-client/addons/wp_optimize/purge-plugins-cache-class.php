@@ -21,7 +21,7 @@ class IWP_MMB_PURGE_CACHE extends IWP_MMB_Core
 			$response = $this->deleteALLWPFCCache();
 			if (!empty($response['success'])) {
 				$text .= "<span class='wpm_results_db'> WP Fastest Cache"." : " . $response['success'] . "</span><br>";
-				$cleanup_values['value_array']['wpfc_cache'] = $values['value'];
+				$cleanup_values['value_array']['wpfc_cache'] = 1;
 			}elseif(!empty($response['error'])){
 				$text .= "<span class='wpm_results_db'> WP Fastest Cache"." : " . $response['error'] . "</span><br>";
 				$cleanup_values['value_array']['wpfc_cache'] = 'WP Fastest Cache';
@@ -31,7 +31,7 @@ class IWP_MMB_PURGE_CACHE extends IWP_MMB_Core
 			$response = $this->deleteALLWPSuperCache();
 			if (!empty($response['success'])) {
 				$text .= "<span class='wpm_results_db'> WP Super Cache"." : " . $response['success'] . "</span><br>";
-				$cleanup_values['value_array']['wp_super_cache'] = $values['value'];
+				$cleanup_values['value_array']['wp_super_cache'] = 1;
 			}elseif(!empty($response['error'])){
 				$text .= "<span class='wpm_results_db'> WP Super Cache"." : " . $response['error'] . "</span><br>";
 				$cleanup_values['value_array']['wp_super_cache'] = 'WP Super Cache';
@@ -41,7 +41,7 @@ class IWP_MMB_PURGE_CACHE extends IWP_MMB_Core
 			$response = $this->deleteALLW3TotalCache();
 			if (!empty($response['success'])) {
 				$text .= "<span class='wpm_results_db'> W3 Total Cache"." : " . $response['success'] . "</span><br>";
-				$cleanup_values['value_array']['w3_total_cache'] = $values['value'];
+				$cleanup_values['value_array']['w3_total_cache'] = 1;
 			}elseif(!empty($response['error'])){
 				$text .= "<span class='wpm_results_db'> W3 Total Cache"." : " . $response['error'] . "</span><br>";
 				$cleanup_values['value_array']['w3_total_cache'] = 'W3 Total Cache';
@@ -51,7 +51,7 @@ class IWP_MMB_PURGE_CACHE extends IWP_MMB_Core
 			$response = $this->deleteALLWPRocketCache();
 			if (!empty($response['success'])) {
 				$text .= "<span class='wpm_results_db'> WP Rocket Cache"." : " . $response['success'] . "</span><br>";
-				$cleanup_values['value_array']['wp_rocket_cache'] = $values['value'];
+				$cleanup_values['value_array']['wp_rocket_cache'] = 1;
 			}elseif(!empty($response['error'])){
 				$text .= "<span class='wpm_results_db'> WP Rocket Cache"." : " . $response['error'] . "</span><br>";
 				$cleanup_values['value_array']['wp_rocket_cache'] = 'WP Rocket Cache';
@@ -61,7 +61,7 @@ class IWP_MMB_PURGE_CACHE extends IWP_MMB_Core
 			$response = $this->deleteALLCometCache();
 			if (!empty($response['success'])) {
 				$text .= "<span class='wpm_results_db'> Comet Cache"." : " . $response['success'] . "</span><br>";
-				$cleanup_values['value_array']['comet_cache'] = $values['value'];
+				$cleanup_values['value_array']['comet_cache'] = 1;
 			}elseif(!empty($response['error'])){
 				$text .= "<span class='wpm_results_db'> Comet Cache"." : " . $response['error'] . "</span><br>";
 				$cleanup_values['value_array']['comet_cache'] = 'Comet Cache';
@@ -72,7 +72,7 @@ class IWP_MMB_PURGE_CACHE extends IWP_MMB_Core
 			$response = $this->deleteAllautoptimizeCache();
 			if (!empty($response['success'])) {
 				$text .= "<span class='wpm_results_db'> Autoptimize"." : " . $response['success'] . "</span><br>";
-				$cleanup_values['value_array']['auto_optimize'] = $values['value'];
+				$cleanup_values['value_array']['auto_optimize'] = 1;
 			}elseif(!empty($response['error'])){
 				$text .= "<span class='wpm_results_db'> Autoptimize"." : " . $response['error'] . "</span><br>";
 				$cleanup_values['value_array']['auto_optimize'] = 'Autoptimize';
@@ -83,7 +83,7 @@ class IWP_MMB_PURGE_CACHE extends IWP_MMB_Core
 			$response = $this->deleteAllLiteSpeedCache();
 			if (!empty($response['success'])) {
 				$text .= "<span class='wpm_results_db'> Litespeed Cache"." : " . $response['success'] . "</span><br>";
-				$cleanup_values['value_array']['litespeed-cache'] = $values['value'];
+				$cleanup_values['value_array']['litespeed-cache'] = 1;
 			}elseif(!empty($response['error'])){
 				$text .= "<span class='wpm_results_db'> Litespeed Cache"." : " . $response['error'] . "</span><br>";
 				$cleanup_values['value_array']['auto_optimize'] = 'Litespeed Cache';
@@ -319,7 +319,7 @@ if(class_exists('WpFastestCache')){
 		}
 
 		public function deleteMinifiedCache(){
-			$this->deleteCssAndJsCacheToolbar();
+			$this->deleteCache();
 		}
 
 		public function wpfc_delete_cache(){

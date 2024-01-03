@@ -105,7 +105,11 @@ class IWP_google_Http_Request
       unset($this->requestHeaders['accept-encoding']);
     }
     $this->canGzip = false;
-    $this->userAgent = str_replace(self::GZIP_UA, "", $this->userAgent);
+    $userAgent = $this->userAgent;
+    if (empty($this->userAgent)) {
+      $userAgent = '';
+    }
+    $this->userAgent = str_replace(self::GZIP_UA, "", $userAgent);
   }
   
   /**

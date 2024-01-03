@@ -1,7 +1,6 @@
 <?php 
-if(basename($_SERVER['SCRIPT_FILENAME']) == "google_webmasters.class.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
 
 
 if(!function_exists('iwp_mmb_create_webmasters_redirect_table')){

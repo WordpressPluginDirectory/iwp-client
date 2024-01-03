@@ -9,9 +9,8 @@
  * Copyright (c) 2011 Prelovac Media
  * www.prelovac.com
  **************************************************************/
-if(basename($_SERVER['SCRIPT_FILENAME']) == "post.class.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
 class IWP_MMB_Post extends IWP_MMB_Core
 {
     function __construct()
@@ -321,7 +320,11 @@ class IWP_MMB_Post extends IWP_MMB_Core
         }
         
         //Prepare post data and temporarily remove content filters before insert post
-				$user = $this->iwp_mmb_get_user_info( $args['username'] );
+		if (!empty($args['username'])) {
+			$user = $this->iwp_mmb_get_user_info( $args['username'] );
+		}else{
+			$user = false;
+		}
 				if($user && $user->ID){
 					$post_data['post_author'] = $user->ID;
 				}
@@ -522,6 +525,10 @@ class IWP_MMB_Post extends IWP_MMB_Core
 		{
 			$where.=" AND post_status IN (".implode(",",$post_array).")";
 		}
+
+		if (!isset($iwp_get_posts_range)) {
+			$iwp_get_posts_range = '';
+		}
 		
 		$limit = ($iwp_get_posts_range) ? ' LIMIT ' . esc_sql($iwp_get_posts_range) : ' LIMIT 500';
 		
@@ -698,6 +705,9 @@ class IWP_MMB_Post extends IWP_MMB_Core
 		{
 			$where.=" AND post_status IN (".implode(",",$post_array).")";
 		}
+		if (!isset($iwp_get_pages_range)) {
+			$iwp_get_pages_range = '';
+		}
 		
             $limit = ($iwp_get_pages_range) ? ' LIMIT ' . esc_sql($iwp_get_pages_range) : ' LIMIT 500';
          
@@ -782,7 +792,7 @@ INNER JOIN $wpdb->term_relationships ON ( p.ID = $wpdb->term_relationships.objec
 INNER JOIN $wpdb->term_taxonomy ON ( $wpdb->term_relationships.term_taxonomy_id = $wpdb->term_taxonomy.term_taxonomy_id
 AND $wpdb->term_taxonomy.taxonomy = '".$taxonomy."' )
 INNER JOIN $wpdb->terms ON ( $wpdb->term_taxonomy.term_id = $wpdb->terms.term_id )");
-		
+		$post_cats = array();
 		foreach ( $cats as $post_val )
 		{
 			

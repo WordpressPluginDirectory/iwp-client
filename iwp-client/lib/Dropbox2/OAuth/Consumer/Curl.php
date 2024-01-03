@@ -7,7 +7,7 @@
 * @package Dropbox\OAuth
 * @subpackage Consumer
 */
-
+#[AllowDynamicProperties]
 class Dropbox_Curl extends Dropbox_ConsumerAbstract
 {    
     /**

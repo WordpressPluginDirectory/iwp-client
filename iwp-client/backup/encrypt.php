@@ -334,8 +334,8 @@ class IWP_MMB_Encryption {
 		
 		if ('' == $encryption) {
 			header('Content-type: text/plain');
-			_e("Decryption failed. The database file is encrypted, but you have no encryption key entered.", 'updraftplus');
-			$updraftplus->log('Decryption of database failed: the database file is encrypted, but you have no encryption key entered.', 'error');
+			_e("Decryption failed. The database file is encrypted, but you have no encryption key entered.", 'iwp_backup_core');
+			$iwp_backup_core->log('Decryption of database failed: the database file is encrypted, but you have no encryption key entered.', 'error');
 		} else {
 
 			// now decrypt the file and return array
@@ -352,7 +352,7 @@ class IWP_MMB_Encryption {
 				unlink($decrypted_file['fullpath']);
 			} else {
 				header('Content-type: text/plain');
-				echo __("Decryption failed. The most likely cause is that you used the wrong key.", 'updraftplus')." ".__('The decryption key used:', 'updraftplus').' '.$encryption;
+				echo __("Decryption failed. The most likely cause is that you used the wrong key.", 'iwp_backup_core')." ".__('The decryption key used:', 'iwp_backup_core').' '.$encryption;
 				
 			}
 		}

@@ -9,9 +9,8 @@
  * Copyright (c) 2011 Prelovac Media
  * www.prelovac.com
  **************************************************************/
-if(basename($_SERVER['SCRIPT_FILENAME']) == "user.class.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
 class IWP_MMB_User extends IWP_MMB_Core
 {
     function __construct()

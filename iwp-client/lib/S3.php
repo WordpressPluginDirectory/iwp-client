@@ -1,4 +1,7 @@
 <?php
+
+if ( ! defined('ABSPATH') )
+    die();
 /**
 * $Id$
 *
@@ -836,7 +839,7 @@ class IWP_MMB_S3
 			$rest->error['code'], $rest->error['message']), __FILE__, __LINE__);
 			return false;
 		}
-		return $rest->code == 200 ? $returnInfo ? $rest->headers : true : false;
+		return ($rest->code == 200) ? ($returnInfo ? $rest->headers : true) : false;
 	}
 
 

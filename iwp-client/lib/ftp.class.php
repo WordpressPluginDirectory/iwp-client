@@ -75,7 +75,9 @@ class IWP_MMB_ftp_wrapper {
 	}
  
 	public function put($local_file_path, $remote_file_path, $mode = FTP_BINARY, $resume = false, $iwp_backup_core = false, $ftp_remote_path = false) {
-
+		if ($iwp_backup_core == false) {
+			global $iwp_backup_core;
+		}
 		$file_size = filesize($local_file_path);
 
 		$existing_size = 0;
@@ -131,7 +133,9 @@ class IWP_MMB_ftp_wrapper {
 	}
  
 	public function get($local_file_path, $remote_file_path, $mode = FTP_BINARY, $resume = false,  $iwp_backup_core = false) {
-
+		if ($iwp_backup_core == false) {
+			global $iwp_backup_core;
+		}
 		$file_last_size = 0;
 
 		if ($resume) {

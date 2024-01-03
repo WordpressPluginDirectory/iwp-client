@@ -12,7 +12,7 @@ if (!class_exists('Google_Client')) {
 class Google_Collection extends Google_Model implements Iterator, Countable
 {
   protected $collection_key = 'items';
-
+  #[\ReturnTypeWillChange]
   public function rewind()
   {
     if (isset($this->modelData[$this->collection_key])
@@ -20,7 +20,7 @@ class Google_Collection extends Google_Model implements Iterator, Countable
       reset($this->modelData[$this->collection_key]);
     }
   }
-
+  #[\ReturnTypeWillChange]
   public function current()
   {
     $this->coerceType($this->key());
@@ -28,7 +28,7 @@ class Google_Collection extends Google_Model implements Iterator, Countable
       return current($this->modelData[$this->collection_key]);
     }
   }
-
+  #[\ReturnTypeWillChange]
   public function key()
   {
     if (isset($this->modelData[$this->collection_key])
@@ -36,18 +36,18 @@ class Google_Collection extends Google_Model implements Iterator, Countable
       return key($this->modelData[$this->collection_key]);
     }
   }
-
+  #[\ReturnTypeWillChange]
   public function next()
   {
     return next($this->modelData[$this->collection_key]);
   }
-
+  #[\ReturnTypeWillChange]
   public function valid()
   {
     $key = $this->key();
     return $key !== null && $key !== false;
   }
-
+  #[\ReturnTypeWillChange]
   public function count()
   {
     if (!isset($this->modelData[$this->collection_key])) {
@@ -55,7 +55,7 @@ class Google_Collection extends Google_Model implements Iterator, Countable
     }
     return count($this->modelData[$this->collection_key]);
   }
-
+  #[\ReturnTypeWillChange]
   public function offsetExists ($offset)
   {
     if (!is_numeric($offset)) {
@@ -63,7 +63,7 @@ class Google_Collection extends Google_Model implements Iterator, Countable
     }
     return isset($this->modelData[$this->collection_key][$offset]);
   }
-
+  #[\ReturnTypeWillChange]
   public function offsetGet($offset)
   {
     if (!is_numeric($offset)) {
@@ -72,7 +72,7 @@ class Google_Collection extends Google_Model implements Iterator, Countable
     $this->coerceType($offset);
     return $this->modelData[$this->collection_key][$offset];
   }
-
+  #[\ReturnTypeWillChange]
   public function offsetSet($offset, $value)
   {
     if (!is_numeric($offset)) {

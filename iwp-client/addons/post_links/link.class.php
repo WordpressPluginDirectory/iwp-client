@@ -9,9 +9,8 @@
  * Copyright (c) 2011 Prelovac Media
  * www.prelovac.com
  **************************************************************/
-if(basename($_SERVER['SCRIPT_FILENAME']) == "link.class.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
 class IWP_MMB_Link extends IWP_MMB_Core
 {
     function __construct()
@@ -58,6 +57,9 @@ class IWP_MMB_Link extends IWP_MMB_Core
 			}
 			
 			//Add Link Owner
+			if (!isset($user)) {
+				$user =  false;
+			}
 			$user_obj = get_userdatabylogin($user);
 			if($user_obj && $user_obj->ID){
 				$params['link_owner'] = $user_obj->ID;
@@ -69,9 +71,9 @@ class IWP_MMB_Link extends IWP_MMB_Core
 			
 			$is_success = wp_insert_link($params);
 			
-			if ($is_success && $Rlink) {
-				$is_success = $wpdb->insert($wpdb->base_prefix."links_extrainfo", array('link_id'=> $is_success, 'link_reciprocal' => $Rlink, 'link_submitter_email' => $submitterMail));
-			}
+			// if ($is_success && $Rlink) {
+			// 	$is_success = $wpdb->insert($wpdb->base_prefix."links_extrainfo", array('link_id'=> $is_success, 'link_reciprocal' => $Rlink, 'link_submitter_email' => $submitterMail));
+			// }
 			return $is_success ? true : array('error' => 'Failed to add link.', 'error_code' => 'failed_to_add_link'); 
     }
 	
@@ -110,8 +112,10 @@ class IWP_MMB_Link extends IWP_MMB_Core
 		$query_links = $wpdb->get_results("SELECT link_id, link_url, link_name, link_target, link_visible, link_rating, link_rel FROM ".$sql_query." ORDER BY link_name ASC LIMIT 500");
 		$links = array();
 		foreach ( $query_links as $link_info ) 
-		{
-			$link_cat = $linkcats[$link_info->link_id];
+		{	
+			if (isset($linkcats[$link_info->link_id])) {
+				$link_cat = $linkcats[$link_info->link_id];
+			}
 			$cats = array();
 			if (!empty($link_cat)) {
 				foreach($link_cat as $catkey=>$catval)
@@ -144,7 +148,7 @@ INNER JOIN $wpdb->term_relationships ON ( l.link_id = $wpdb->term_relationships.
 INNER JOIN $wpdb->term_taxonomy ON ( $wpdb->term_relationships.term_taxonomy_id = $wpdb->term_taxonomy.term_taxonomy_id
 AND $wpdb->term_taxonomy.taxonomy = '".$taxonomy."' )
 INNER JOIN $wpdb->terms ON ( $wpdb->term_taxonomy.term_id = $wpdb->terms.term_id )");
-		
+		$post_cats = array();
 		foreach ( $cats as $post_val )
 		{
 			

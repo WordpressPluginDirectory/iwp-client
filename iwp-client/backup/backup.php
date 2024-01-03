@@ -37,12 +37,32 @@ class IWP_MMB_Backup {
 	# Time for the current entity
 	private $makezip_if_altered_since = -1;
 
-	private $excluded_extensions = false;
+	private $excluded_extensions = array();
 
 	private $use_zip_object = 'IWP_MMB_ZipArchive';
 	public $debug = false;
 
 	public $iwp_backup_dir;
+	public $iwp_backup_dir_realpath;
+	public $zip_microtime_start;
+	public $first_linked_index;
+	public $last_service;
+	public $current_service;
+	public $whichdb;
+	public $table_prefix_raw;
+	public $account_space_oodles;
+	public $try_split;
+	public $dbinfo;
+	public $table_prefix;
+	public $whichdb_suffix;
+	public $duplicate_tables_exist;
+	public $excluded_prefixes;
+	public $makezip_recursive_batchedbytes;
+	public $existing_files;
+	public $make_zipfile_source;
+	public $existing_files_rawsize;
+	public $existing_zipfiles_size;
+	public $source;
 	private $blog_name;
 	private $wpdb_obj;
 	private $job_file_entities = array();
@@ -191,7 +211,11 @@ class IWP_MMB_Backup {
 
 		// Firstly, make sure that the temporary file is not already being written to - which can happen if a resumption takes place whilst an old run is still active
 		$zip_name = $full_path.'.tmp';
-		$time_mod = (int)@filemtime($zip_name);
+		if (file_exists($zip_name)){
+			$time_mod = (int)@filemtime($zip_name);
+		}else{
+			$time_mod = 0;
+		}
 		if (file_exists($zip_name) && $time_mod>100 && ($time_now-$time_mod)<30) {
 			$iwp_backup_core->terminate_due_to_activity($zip_name, $time_now, $time_mod);
 		}
@@ -300,7 +324,7 @@ class IWP_MMB_Backup {
 		foreach ($services as $ind => $service) {
 			if ($service == "none" || '' == $service) continue;
 
-			$objname = "IWP_MMB_UploadModule_${service}";
+			$objname = "IWP_MMB_UploadModule_".$service;
 			if (!class_exists($objname) && file_exists($GLOBALS['iwp_mmb_plugin_dir'].'/backup/'.$service.'.php')) {
 				require_once($GLOBALS['iwp_mmb_plugin_dir'].'/backup/'.$service.'.php');
 			}
@@ -1067,6 +1091,7 @@ class IWP_MMB_Backup {
 						$zip_file = (isset($this->backup_files_array[$youwhat]) && isset($this->backup_files_array[$youwhat][$index])) ? $this->backup_files_array[$youwhat][$index] : $backup_file_basename.'-'.$youwhat.($index+1).'.zip';
 
 						//$fbase = $backup_file_basename.'-'.$youwhat.($index+1).'.zip';
+						$fbase = '';
 						$z = $this->iwp_backup_dir.'/'.$zip_file;
 						$fs_key = $youwhat.$index.'-size';
 						if (file_exists($z)) {
@@ -1074,7 +1099,7 @@ class IWP_MMB_Backup {
 							$backup_array[$fs_key] = filesize($z);
 						} elseif (isset($this->backup_files_array[$fs_key])) {
 							$backup_array[$youwhat][$index] = $fbase;
-							$backup_array[$fs_key] = $this->backup_files_array[$fskey];
+							$backup_array[$fs_key] = $this->backup_files_array[$fs_key];
 						}
 					} else {
 						$zip_file = (isset($this->backup_files_array[$youwhat]) && isset($this->backup_files_array[$youwhat][0])) ? $this->backup_files_array[$youwhat][0] : $backup_file_basename.'-'.$youwhat.'.zip';
@@ -1387,7 +1412,7 @@ class IWP_MMB_Backup {
 
 						$this->close();
 
-						$iwp_backup_core->log("Table $table: finishing file (${table_file_prefix}.gz - ".round(filesize($this->iwp_backup_dir.'/'.$table_file_prefix.'.tmp.gz')/1024,1)." KB)");
+						$iwp_backup_core->log("Table $table: finishing file (".$table_file_prefix.".gz - ".round(filesize($this->iwp_backup_dir.'/'.$table_file_prefix.'.tmp.gz')/1024,1)." KB)");
 
 						rename($db_temp_file, $this->iwp_backup_dir.'/'.$table_file_prefix.'.gz');
 						$iwp_backup_core->something_useful_happened();
@@ -1408,7 +1433,7 @@ class IWP_MMB_Backup {
 				} else {
 					$iwp_backup_core->log(__('The database backup appears to have failed', 'InfiniteWP').' - '.__('the options table was not found', 'InfiniteWP'), 'warning', 'optstablenotfound');
 				}
-				$time_this_run = time()-$IWP_backup->opened_log_time;
+				$time_this_run = time()-$iwp_backup_core->opened_log_time;
 				if ($time_this_run > 2000) {
 					# Have seen this happen; not sure how, but it was apparently deterministic; if the current process had been running for a long time, then apparently all database commands silently failed.
 					# If we have been running that long, then the resumption may be far off; bring it closer
@@ -1453,7 +1478,7 @@ class IWP_MMB_Backup {
 		foreach ($stitch_files as $table_file) {
 			$iwp_backup_core->log("{$table_file}.gz ($sind/$how_many_tables): adding to final database dump");
 			if (!$handle = gzopen($this->iwp_backup_dir.'/'.$table_file.'.gz', "r")) {
-				$iwp_backup_core->log("Error: Failed to open database file for reading: ${table_file}.gz");
+				$iwp_backup_core->log("Error: Failed to open database file for reading: ".$table_file.".gz");
 				$iwp_backup_core->log(__("Failed to open database file for reading:", 'InfiniteWP').' '.$table_file.'.gz', 'error');
 				$errors++;
 			} else {
@@ -2331,7 +2356,7 @@ class IWP_MMB_Backup {
 			$memory_usage2 = round(@memory_get_usage(true)/1048576, 1);
 			
 			if ($time_counting_ended-$time_counting_began > 20 && $iwp_backup_core->verify_free_memory($memory_needed_estimate*0.15) && $whandle = gzopen($cache_file_base.'-zfb.gz.tmp', 'w')) {
-				$iwp_backup_core->log("File counting took a long time (".($time_counting_ended - $time_counting_began)."s); will attempt to cache results (memory_limit: $memory_limit (used: ${memory_usage}M | ${memory_usage2}M), estimated uncompressed bytes: ".round($memory_needed_estimate/1024, 1)." Kb)");
+				$iwp_backup_core->log("File counting took a long time (".($time_counting_ended - $time_counting_began)."s); will attempt to cache results (memory_limit: $memory_limit (used: ".$memory_usage."M | ".$memory_usage2."M), estimated uncompressed bytes: ".round($memory_needed_estimate/1024, 1)." Kb)");
 				
 				$buf = 'a:'.count($this->zipfiles_batched).':{';
 				foreach ($this->zipfiles_batched as $file => $add_as) {
@@ -2945,6 +2970,7 @@ class IWP_MMB_Backup {
 }
 
 class IWP_MMB_WPDB_OtherDB extends wpdb {
+	public $error;
 	// This adjusted bail() does two things: 1) Never dies and 2) logs in the UD log
 	public function bail( $message, $error_code = '500' ) {
 		global $iwp_backup_core;

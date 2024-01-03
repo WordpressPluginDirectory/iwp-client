@@ -1,4 +1,6 @@
 <?php
+if ( ! defined('ABSPATH') )
+    die();
 
 use WebSharks\CometCache\Classes\ApiBase;
 function clearCometCacheIWP(){

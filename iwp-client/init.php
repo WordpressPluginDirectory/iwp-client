@@ -4,7 +4,7 @@ Plugin Name: InfiniteWP - Client
 Plugin URI: http://infinitewp.com/
 Description: This is the client plugin of InfiniteWP that communicates with the InfiniteWP Admin panel.
 Author: Revmakx
-Version: 1.12.3.1
+Version: 1.12.5
 Author URI: http://www.revmakx.com
 Network: true
 */
@@ -25,12 +25,11 @@ Network: true
  * Copyright (c) 2011 Prelovac Media
  * www.prelovac.com
  **************************************************************/
-if(basename($_SERVER['SCRIPT_FILENAME']) == "init.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
 
 if(!defined('IWP_MMB_CLIENT_VERSION'))
-	define('IWP_MMB_CLIENT_VERSION', '1.12.3.1');
+	define('IWP_MMB_CLIENT_VERSION', '1.12.5');
 
 if ( !defined('IWP_MMB_XFRAME_COOKIE')){
 	$siteurl = function_exists('get_site_option') ? get_site_option( 'siteurl' ) : get_option('siteurl');
@@ -173,7 +172,7 @@ if( !function_exists ('iwp_mmb_parse_request')) {
 			$request_data 	= iwp_recursive_parse_args( $request_data, $defaults );
 
 			if (isset($GLOBALS['IWP_JSON_COMMUNICATION']) && $GLOBALS['IWP_JSON_COMMUNICATION']) {
-				$signature  = base64_decode($request_data['signature']);
+				$signature  = !empty($request_data['signature'])?base64_decode($request_data['signature']): array();
 			}else{
 				$signature  = $request_data['signature'];
 			}
@@ -224,14 +223,16 @@ if( !function_exists ('iwp_mmb_parse_request')) {
 			$auth = $iwp_mmb_core->authenticate_message($action . $id, $signature, $id);
 			if ($auth === true) {
 				if (!defined('WP_ADMIN') && $action == 'get_stats' || $action == 'do_upgrade' || $action == 'install_addon' || $action == 'edit_plugins_themes' || $action == 'bulk_actions_processor' || $action == 'update_broken_link' || $action == 'undismiss_broken_link' ||  $action == 'changelog_plugin') {
-					define('WP_ADMIN', true);
+					if (!defined('WP_ADMIN')) {
+						define('WP_ADMIN', true);
+					}
 				}
 				if ($action == 'get_stats') {
 					iwp_mu_plugin_loader();
 				}
-				if (is_multisite()) {
+				if (is_multisite() && !defined('WP_NETWORK_ADMIN')) {
 					define('WP_NETWORK_ADMIN', true);
-				}else{
+				}elseif(!defined('WP_NETWORK_ADMIN')){
 					define('WP_NETWORK_ADMIN', false);
 				}
 				$params['id'] = $id;
@@ -416,7 +417,7 @@ if( !function_exists ( 'iwp_mmb_response' )) {
 		}
 		else{
 			$return['error'] = $response['error'];
-			$return['error_code'] = $response['error_code'];
+			$return['error_code'] = !empty($response['error_code'])?$response['error_code']: '';
 		}
 		
 		if( !headers_sent() ){
@@ -472,7 +473,7 @@ if( !function_exists ( 'iwp_mmb_add_site' )) {
 					return;
 				}
 				
-				if (checkOpenSSL() && !$user_random_key_signing) {
+				if (checkOpenSSL() && empty($user_random_key_signing)) {
 					$verify = openssl_verify($action . $id, base64_decode($signature), $public_key);
 					if ($verify == 1) {
 						$iwp_mmb_core->set_admin_panel_public_key($public_key);
@@ -538,7 +539,7 @@ if( !function_exists ( 'iwp_mmb_readd_site' )) {
 					iwp_mmb_response(array('error' => 'Invalid activation key', 'error_code' => 'iwp_mmb_readd_site_invalid_activation_key'), false);
 					return;
 				}
-				if (checkOpenSSL() && !$user_random_key_signing) {
+				if (checkOpenSSL() && empty($user_random_key_signing)) {
 
 					$verify = openssl_verify($action . $id, $signature, $public_key);
 					if ($verify == 1) {
@@ -1206,14 +1207,8 @@ if( !function_exists ( 'iwp_mmb_search_posts_by_term' )) {
 			default: iwp_mmb_response(false, false);		
 		}
 		$return = $iwp_mmb_core->search_instance->iwp_mmb_search_posts_by_term($params);
-		
-		
-		
-		if ($return_if_true) {
-			iwp_mmb_response($return_value, true);
-		} else {
-			iwp_mmb_response($return_if_false, false);
-		}
+
+		iwp_mmb_response(false, false);
 	}
 }
 
@@ -1488,16 +1483,6 @@ if( !function_exists ('iwp_mmb_delete_posts')) {
 		else {
 			iwp_mmb_response($return, true);
 		}
-	}
-}
-
-if( !function_exists ('iwp_mmb_edit_posts')) {
-	function iwp_mmb_edit_posts($params)
-	{
-		global $iwp_mmb_core;
-		$iwp_mmb_core->get_posts_instance();
-		$return = $iwp_mmb_core->posts_instance->edit_posts($params);
-		iwp_mmb_response($return, true);
 	}
 }
 
@@ -2249,7 +2234,7 @@ if(!function_exists('iwp_mmb_shutdown')){
 			if(stripos($error['message'], 'allowed memory size') !== false){
 				$response .= '<br>Try <a href="http://infinitewp.com/knowledge-base/increase-memory-limit/?utm_source=application&utm_medium=userapp&utm_campaign=kb" target="_blank">increasing the PHP memory limit</a> for this WP site.';
 			}
-			if(!$GLOBALS['IWP_RESPONSE_SENT']){
+			if(!isset($GLOBALS['IWP_RESPONSE_SENT'])){
 				iwp_mmb_response(array('error' => $response, 'error_code' => 'iwp_mmb_shutdown'), false);
 			}
 			
@@ -2352,7 +2337,7 @@ if(!function_exists('iwp_mmb_convert_data')){
 						$taskResultData = array('task_results' => array($historyID => $task_results));
 						$taskResultData['task_results'][$historyID]['adminHistoryID'] = $historyID;
 						
-						$insert  = $wpdb->insert($wpdb->base_prefix.'iwp_backup_status',array( 'stage' => 'finished', 'status' => 'completed',  'action' => $action, 'type' => $type,'category' => $category ,'historyID' => $task_results['backhack_status']['adminHistoryID'],'finalStatus' => 'completed','startTime' => $task_results['time'],'endTime' => $task_results['time'],'statusMsg' => $statusArray['statusMsg'],'requestParams' => serialize($key),'taskName' => $task_name, 'responseParams' => '', 'taskResults' =>  serialize($taskResultData)), array( '%s', '%s','%s', '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s') );
+						$insert  = $wpdb->insert($wpdb->base_prefix.'iwp_backup_status',array( 'stage' => 'finished', 'status' => 'completed',  'action' => $action, 'type' => $type,'category' => $category ,'historyID' => $task_results['backhack_status']['adminHistoryID'],'finalStatus' => 'completed','startTime' => $task_results['time'],'endTime' => $task_results['time'],'statusMsg' => null,'requestParams' => serialize($key),'taskName' => $task_name, 'responseParams' => '', 'taskResults' =>  serialize($taskResultData)), array( '%s', '%s','%s', '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s') );
 						
 					}
 				}
@@ -2979,7 +2964,7 @@ if (!function_exists('iwp_mmb_json_convert_string')) {
 				return mb_convert_encoding( $string, 'UTF-8', 'UTF-8' );
 			}
 		} else {
-			return check_invalid_UTF8( $string, $true);
+			return check_invalid_UTF8( $string, true);
 		}
 	}
 }
@@ -3060,6 +3045,8 @@ function _iwp_mmb_safe_unserialize($str)
 	}
 	$stack = array();
 	$expected = array();
+	$list = array();
+	$data = array();
 	/*
 	 * states:
 	 *   0 - initial state, expecting a single value or array
@@ -3068,6 +3055,7 @@ function _iwp_mmb_safe_unserialize($str)
 	 *   3 - in array, expecting value or another array
 	 */
 	$state = 0;
+	$key =0;
 	while($state != 1)
 	{
 		$type = isset($str[0]) ? $str[0] : '';
@@ -3290,7 +3278,7 @@ function iwp_mmb_get_hosting_disk_quota_free() {
 
 	$txt = '<IWPHEADER>_IWP_JSON_PREFIX_' . base64_encode( iwp_mmb_json_encode( $return ) ) . '<ENDIWPHEADER>';
 	ignore_user_abort(true);
-	ob_end_clean();
+	if (ob_get_contents()) ob_end_clean();
 	ob_start();    
 	echo ($txt);
 	$size = ob_get_length();

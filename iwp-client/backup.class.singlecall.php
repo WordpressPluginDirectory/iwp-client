@@ -17,9 +17,9 @@
  * Copyright (c) 2011 Prelovac Media
  * www.prelovac.com
  **************************************************************/
- if(basename($_SERVER['SCRIPT_FILENAME']) == "brokenlinks.class.singlecall.php"):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+	die();
+
 if(!defined('IWP_BACKUP_DIR')){
 define('IWP_BACKUP_DIR', WP_CONTENT_DIR . '/infinitewp/backups');
 }
@@ -242,7 +242,7 @@ function delete_task_now($task_name){
             return false;
         
         extract($args); //extract settings
-          
+        
         //Remove old backup(s)
         $removed = $this->remove_old_backups($task_name);
         if (is_array($removed) && isset($removed['error'])) {
@@ -464,8 +464,12 @@ function delete_task_now($task_name){
 		if ($del_host_file) {
 			@unlink($backup_file);
 		}
-         
         $this->update_status($task_name,'finished',true, $paths);
+        $removed = $this->remove_old_backups($task_name);
+        if (is_array($removed) && isset($removed['error'])) {
+        	//$error_message = $removed['error'];
+        	return $removed;
+        }
 				
         return $backup_url; 
     }
@@ -552,25 +556,7 @@ function delete_task_now($task_name){
     {
 		global $zip_errors;
         $sys = substr(PHP_OS, 0, 3);
-
-        if (!$handle_check) {
-            if(function_exists('php_uname')){
-                $os_name = php_uname();
-            }elseif (defined('PHP_OS')) {
-                $os_name = PHP_OS;
-            }
-            if (stristr($os_name, 'windows')) {
-                $windows_normalized_abspath = $normalized_abspath.'wp-admin/../';
-                $handle_check = @opendir($normalized_abspath);
-                if (!$handle_check) {
-                    return array(
-						'error' => 'Unable to list root directories', 'error_code' => 'backup_of_files_failed_unable_to_list_root_directories'
-					);
-                }
-        
-            }
-        }
-        
+  
 		if(empty($exclude_extensions))
 		{
 			$exclude_extensions = array();
@@ -775,7 +761,9 @@ function delete_task_now($task_name){
         chdir(ABSPATH);
 		
 		$fail_safe_files = $this->tasks['args']['fail_safe_files'];
-		
+		if (!isset($disable_comp)) {
+            $disable_comp = false;
+        }
 		if($fail_safe_files){
 			$pcl_result = $this->fail_safe_pcl_files($task_name, $backup_file, $exclude, $include, $fail_safe_files, $disable_comp, $add, $remove);
 			if(is_array($pcl_result) && isset($pcl_result['error'])){
@@ -788,14 +776,14 @@ function delete_task_now($task_name){
 			@copy($backup_file, $backup_file.'_2');
 			
 			iwp_mmb_print_flush('Files ZIP CMD: Start');
-			$command  = "$zip -q -j $comp_level $backup_file .* * $exclude_file_data";
+			$command  = "zip -q -j $comp_level $backup_file .* * $exclude_file_data";
 			ob_start();
 			$result_f = $this->iwp_mmb_exec($command, false, true);
 			ob_get_clean();
 			iwp_mmb_print_flush('Files ZIP CMD Result: '.$result_f);
 			iwp_mmb_print_flush('Files ZIP CMD: 1/2 over');
 			if (!$result_f || $result_f == 18) { // disregard permissions error, file can't be accessed			
-				$command  = "$zip -q -r $comp_level $backup_file $include_data $exclude_data";
+				$command  = "zip -q -r $comp_level $backup_file $include_data $exclude_data";
 				ob_start();	
 				$result_d = $this->iwp_mmb_exec($command, false, true);  
 				ob_get_clean();     
@@ -1333,7 +1321,7 @@ function delete_task_now($task_name){
             $skipThisTable = false;
             if (!empty($exclude_tables)) {
                 foreach ($exclude_tables as $ke => $exclude_table) {
-                    if (strpos($table[0], $exclude_table)) {
+                    if (!empty($exclude_table) && strpos($table[0], $exclude_table)) {
                             $skipThisTable = true;
                             break;
                     }
@@ -2226,7 +2214,7 @@ function ftp_backup($args)
             
         } else {
         $port = $ftp_port ? $ftp_port : 21; //default port is 21
-        if ($ftp_ssl && function_exists('ftp_ssl_connect')) {
+        if (!empty($ftp_ssl) && $ftp_ssl && function_exists('ftp_ssl_connect')) {
             $conn_id = ftp_ssl_connect($ftp_hostname,$port);
         } else if (function_exists('ftp_connect')) {
             $conn_id = ftp_connect($ftp_hostname,$port);
@@ -2303,6 +2291,7 @@ function ftp_backup($args)
                     }
                     $oldRoot = 'Apps/InfiniteWP/';
                     $oldVersion = false;
+                    $path = '';
                     $dropbox_destination = $oldRoot.ltrim(trim($dropbox_destination), '/');
                         $dropbox_destination = rtrim($dropbox_destination, '/');
                     if (isset($dropbox_site_folder) && $dropbox_site_folder == true){
@@ -2392,6 +2381,9 @@ function ftp_backup($args)
                 $dropbox_destination .=  '/'.$this->site_name;
             }
             $folders = explode('/',$dropbox_destination);
+            if (!isset($path)) {
+                $path = '';
+            }
             foreach ($folders as $key => $name) {
                 $path.=trim($name).'/';
             }
@@ -2667,7 +2659,9 @@ function ftp_backup($args)
 					$chunk = fread($handle, $upload_file_block_size);
 					$statusArray = $media->nextChunk($chunk, $resumeURI, $fileSizeUploaded);
 					$status = $statusArray['status'];
-					$resumeURI = $statusArray['resumeURI'];
+                    if(isset($statusArray['resumeURI'])){
+                        $resumeURI = $statusArray['resumeURI'];
+                    }
 					//$fileSizeUploaded = ftell($handle);
 					$fileSizeUploaded = $statusArray['progress'];
 				}
@@ -2844,7 +2838,7 @@ function ftp_backup($args)
                 $schedule_hour    = $schedule[0];
                 
                 if ($current_weekday > $schedule_weekday)
-                    $weekday_offset = 7 - ($week_day - $task_schedule[1]);
+                    $weekday_offset = 7 - ($schedule_weekday - $schedule[1]);
                 else
                     $weekday_offset = $schedule_weekday - $current_weekday;
                 
@@ -3109,9 +3103,7 @@ function ftp_backup($args)
 										
 		$select_prev_backup_res = $wpdb->get_results($select_prev_backup,  ARRAY_A);
 		
-		
 				
-		if(!empty($select_prev_backup_res))
 		foreach ( $select_prev_backup_res as $backup_data ) 
 		{
 			$task_result = unserialize($backup_data['taskResults']);
@@ -3214,7 +3206,9 @@ function ftp_backup($args)
 			}
 			else
 			{
-				@unlink($backup_file);
+                if (file_exists($backup_file)) {
+                    @unlink($backup_file);
+                }
 			}
         }        
         
@@ -3343,7 +3337,7 @@ function ftp_backup($args)
                                 }
                                 else
                                 {
-                                    if (!empty($requestParams[$taskName]['requestParams'][$historyID]['account_info']) && $thisTask['historyID'] != $historyID) {
+                                    if (!empty($requestParams[$taskName]['requestParams'][$historyID]['account_info']) && !empty($thisTask['historyID']) && $thisTask['historyID'] != $historyID) {
                                         $cloudFailedBackup[]= $this_backup_file;
                                         $failedBackupHisID[$historyID]=$historyID;
                                     }
@@ -3376,7 +3370,9 @@ function ftp_backup($args)
                     if (!empty($backup['db'])) {
                         $results[] = $backup['db'];
                     }
-                    $results[] = $backup['backup_file_basename'];
+                    if (!empty($backup['backup_file_basename'])) {
+            			$results[] = $backup['backup_file_basename'];
+            		}
                 }
             }
 
@@ -3543,7 +3539,6 @@ function ftp_backup($args)
 		$before = array();
 		$tasks = $params['backups'];
 		if( !empty($tasks) ){
-			$iwp_mmb_backup = new IWP_MMB_Backup();
 			
 			if( function_exists( 'wp_next_scheduled' ) ){
 				if ( !wp_next_scheduled('iwp_client_backup_tasks') ) {
@@ -3573,7 +3568,7 @@ function ftp_backup($args)
 				}
 				
 				$before[$task['task_name']]['task_args'] = $task['args'];
-				$before[$task['task_name']]['task_args']['next'] = $iwp_mmb_backup->schedule_next($task['args']['type'], $task['args']['schedule']);
+				$before[$task['task_name']]['task_args']['next'] = $this->schedule_next($task['args']['type'], $task['args']['schedule']);
 			}
 		}
 		update_option('iwp_client_backup_tasks', $before);
@@ -3623,7 +3618,7 @@ if(!function_exists('get_all_files_from_dir')) {
 		{
 			foreach ($exclude as $file) {
 				if (!in_array($file, array('.', '..'))) {
-					if ($file[0] === "/") $path = substr($file, 1);
+					if (!empty($file[0]) && $file[0] === "/") $path = substr($file, 1);
 					$ignore_array[] = "$path/$file";
 				}
 			}

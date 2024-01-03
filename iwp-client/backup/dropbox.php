@@ -49,7 +49,7 @@ class IWP_MMB_UploadModule_dropbox extends IWP_MMB_UploadModule {
 				if ($job_run_time < 15) $upload_secs = max(6, $job_run_time*0.6);
 				$new_chunk = max(min($upload_secs * $upload_rate * 0.9, 10485760), 1048576);
 				$new_chunk = $new_chunk - ($new_chunk % 524288);
-				$chunk_size = (int)$new_chunk;
+				$chunk_size = intval($new_chunk);
 				$storage->setChunkSize($chunk_size);
 				$iwp_backup_core->jobdata_set('dropbox_chunk_size', $chunk_size);
 			}

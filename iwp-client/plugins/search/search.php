@@ -15,9 +15,9 @@
  * Copyright (c) 2011 Prelovac Media
  * www.prelovac.com
  **************************************************************/
-if ( ! defined('ABSPATH') ):
-    exit;
-endif;
+if ( ! defined('ABSPATH') )
+    die();
+	
 	iwp_mmb_add_action('iwp_mmb_search_posts_by_term', 'iwp_mmb_search_posts_by_term');
 	
     function iwp_mmb_search_posts_by_term($params = false){

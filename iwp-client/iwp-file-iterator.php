@@ -13,6 +13,9 @@
  * 
  * 
  **************************************************************/
+if ( ! defined('ABSPATH') )
+    die();
+    
 class IWP_Seek_Iterator{
 
 	public $iterator_common;
@@ -25,6 +28,8 @@ class IWP_Seek_Iterator{
 	public $app_functions;
 	public $is_recursive;
 	public $exclude_class_obj;
+    public $seek;
+    public $counter;
 
 	public function __construct($type = false, $iterator_loop_limit = 1000){
 	    $this->type = $type;

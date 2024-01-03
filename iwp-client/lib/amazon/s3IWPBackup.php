@@ -61,12 +61,12 @@ class IWP_MMB_S3_MULTICALL extends IWP_MMB_Backup_Multicall
 			$prevChunkResults = $responseParams['response_data'];
 			$uploadId = $prevChunkResults['uploadId'];
 			$nextPart = $prevChunkResults['nextPart'];
-			$partsArray = $prevChunkResults['partsArray'];
+			$partsArray = !empty($prevChunkResults['partsArray'])?$prevChunkResults['partsArray']: false;
 			$parts = $prevChunkResults['parts'];
 			
 			$current_file_num = $responseParams['current_file_num'];
-			$dont_retrace = $responseParams['dont_retrace'];
-			$start_new_backup = $responseParams['start_new_backup'];
+			$dont_retrace = !empty($responseParams['dont_retrace'])?$responseParams['dont_retrace']: false;
+			$start_new_backup = !empty($responseParams['start_new_backup'])?$responseParams['start_new_backup']: false;
 		}
 		if(empty($current_file_num)){
 			$current_file_num = 0;
@@ -401,11 +401,11 @@ class IWP_MMB_S3_MULTICALL extends IWP_MMB_Backup_Multicall
 			}
 			catch (Exception $e)
 			{
-				$result = $s3->abortMultipartUpload(array(
-								'Bucket'   => $as3_bucket,
-								'Key'      => $as3_file,
-								'UploadId' => $uploadId
-								));
+				$result = $s3->abortMultipartUpload(
+								$as3_bucket,
+								$as3_file,
+								$uploadId
+								);
 				$err = $e->getMessage();
 				if($err){
 					 return array(

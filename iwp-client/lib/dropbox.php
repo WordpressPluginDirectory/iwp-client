@@ -1,4 +1,7 @@
 <?php
+
+if ( ! defined('ABSPATH') )
+    die();
 class IWP_Dropbox {
 	const API_URL = 'https://api.dropbox.com/';
 	const API_CONTENT_URL = 'https://api-content.dropbox.com/';

@@ -1,4 +1,7 @@
 <?php
+
+if ( ! defined('ABSPATH') )
+    die();
 /**
  *
  * Copyright (c) 2012-5, David Anderson (https://www.simbahosting.co.uk).  All rights reserved.
@@ -84,6 +87,9 @@ class IWP_MMB_S3_Compat {
 	
 	// Added at request of a user using a non-default port.
 	public static $port = false;
+	public $client;
+	private $_serverSideEncryption;
+	public $useExceptions;
 
 	/**
 	 * Constructor - if you're not using the class statically
@@ -640,7 +646,9 @@ class IWP_MMB_S3_Compat {
 				return $this->trigger_from_exception($e);
 			}
 		}
-		fclose($fh);
+		if (isset($fh) && is_resource($fh)) {
+			fclose($fh);
+		}
 	}
 
 

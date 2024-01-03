@@ -371,7 +371,7 @@ class IWP_MMB_UploadModule_s3 extends IWP_MMB_UploadModule {
 				} else {
 
 					// Retrieve the upload ID
-					$upload_id = $this->jobdata_get($hash.'_uid', null, "upd_${whoweare_keys}_${hash}_uid");
+					$upload_id = $this->jobdata_get($hash.'_uid', null, "upd_".$whoweare_keys."_".$hash."_uid");
 					if (empty($upload_id)) {
 						$s3->setExceptions(true);
 						try {
@@ -388,7 +388,7 @@ class IWP_MMB_UploadModule_s3 extends IWP_MMB_UploadModule {
 							continue;
 						} else {
 							$iwp_backup_core->log("$whoweare chunked upload: got multipart ID: $upload_id");
-							$this->jobdata_set($hash.'_uid', $upload_id, "upd_${whoweare_keys}_${hash}_uid");
+							$this->jobdata_set($hash.'_uid', $upload_id, "upd_".$whoweare_keys."_".$hash."_uid");
 						}
 					} else {
 						$iwp_backup_core->log("$whoweare chunked upload: retrieved previously obtained multipart ID: $upload_id");
@@ -397,7 +397,7 @@ class IWP_MMB_UploadModule_s3 extends IWP_MMB_UploadModule {
 					$successes = 0;
 					$etags = array();
 					for ($i = 1; $i <= $chunks; $i++) {
-						$etag = $this->jobdata_get($hash.'_etag_'.$i, null, "ud_${whoweare_keys}_${hash}_e$i");
+						$etag = $this->jobdata_get($hash.'_etag_'.$i, null, "ud_".$whoweare_keys."_".$hash."_e$i");
 						if (strlen($etag) > 0) {
 							$iwp_backup_core->log("$whoweare chunk $i: was already completed (etag: $etag)");
 							$successes++;
@@ -412,7 +412,7 @@ class IWP_MMB_UploadModule_s3 extends IWP_MMB_UploadModule {
 							if (false !== $etag && is_string($etag)) {
 								$iwp_backup_core->record_uploaded_chunk(round(100*$i/$chunks, 1), "$i, $etag", $fullpath);
 								array_push($etags, $etag);
-								$this->jobdata_set($hash.'_etag_'.$i, $etag, "ud_${whoweare_keys}_${hash}_e$i");
+								$this->jobdata_set($hash.'_etag_'.$i, $etag, "ud_".$whoweare_keys."_".$hash."_e$i");
 								$successes++;
 							} else {
 								$iwp_backup_core->log("$whoweare chunk $i: upload failed");
@@ -503,8 +503,7 @@ class IWP_MMB_UploadModule_s3 extends IWP_MMB_UploadModule {
 						IWP_MMB_Backup_Options::get_iwp_backup_option('IWP_ssl_useservercerts'),
 						IWP_MMB_Backup_Options::get_iwp_backup_option('IWP_ssl_disableverify'),
 						IWP_MMB_Backup_Options::get_iwp_backup_option('IWP_ssl_nossl'),
-						null,
-						$sse
+						null
 					);
 
 					if (is_wp_error($s3)) return $s3;
