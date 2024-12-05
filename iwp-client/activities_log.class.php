@@ -139,7 +139,7 @@ class IWP_MMB_Activities_log {
 		);
 		
 		if(!empty($GLOBALS['activities_log_datetime'])) {
-			$iwp_activities['post_date'] = $iwp_activities['post_date_gmt'] = $iwp_activities['post_modified'] = $iwp_activities['post_modified_gmt'] = $GLOBALS['activities_log_datetime'];
+			$iwp_activities['post_date'] = $iwp_activities['post_date_gmt'] = $iwp_activities['post_modified'] = $iwp_activities['post_modified_gmt'] = wp_resolve_post_date();
 		}
 		if (is_multisite() && in_array($iwp_action, array('now', 'schedule','multiCallNow'))) {
 			$wpdb->set_blog_id(1);

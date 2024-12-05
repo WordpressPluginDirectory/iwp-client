@@ -566,8 +566,9 @@ class IWP_MMB_Installer extends IWP_MMB_Core
 			if (!empty($result)) {
                 foreach ($result as $plugin_slug => $plugin_info) {
                     $upgrade_msg[$plugin_slug] = $upgrader->skin->get_upgrade_messages();
-                    if ( !empty($upgrade_msg[$plugin_slug]) && !empty($upgrade_msg[$plugin_slug][0]) && !empty($upgrade_msg[$plugin_slug][0]['key']) && $upgrade_msg[$plugin_slug][0]['key'] == 'up_to_date') {
-                        $return[$plugin_slug] = array('error' => $upgrade_msg[$plugin_slug][0]['message'], 'error_code' => $upgrade_msg[$plugin_slug][0]['key']);
+                    
+                    if ($this->is_up_to_date_issue($upgrade_msg[$plugin_slug])) {
+                        $return[$plugin_slug] = array('error' => 'We are unable to update the plugin. Please perform the update again.', 'error_code' => 'up_to_date');
                     }elseif (!$plugin_info || is_wp_error($plugin_info)) {
                         $return[$plugin_slug] = array('error' => $this->parse_upgrade_response($upgrader->skin->get_upgrade_messages()), 'error_code' => 'upgrade_plugins_wp_error');
                     } else {
@@ -641,6 +642,20 @@ class IWP_MMB_Installer extends IWP_MMB_Core
             );
         }
     }
+
+    public function is_up_to_date_issue( $error_message ){
+        if (empty($error_message)) {
+            return false;
+        }
+
+        foreach ($error_message as $key => $value) {
+            if ( $value['key'] == 'up_to_date') {
+                return true;
+            }
+        }
+
+        return false;
+    }
     
     function upgrade_themes($themes = false,$theme_details = false,$userid = false)
     {
@@ -679,8 +694,8 @@ class IWP_MMB_Installer extends IWP_MMB_Core
             if (!empty($result)) {
                 foreach ($result as $theme_tmp => $theme_info) {
                     $upgrade_msg[$theme_tmp] = $upgrader->skin->get_upgrade_messages();
-                    if ( !empty($upgrade_msg[$theme_tmp]) && !empty($upgrade_msg[$theme_tmp][0]) && !empty($upgrade_msg[$theme_tmp][0]['key']) && $upgrade_msg[$theme_tmp][0]['key'] == 'up_to_date') {
-                        $return[$theme_tmp] = array('error' => $upgrade_msg[$theme_tmp][0]['message'], 'error_code' => $upgrade_msg[$theme_tmp][0]['key']);
+                    if ($this->is_up_to_date_issue($upgrade_msg[$theme_tmp])) {
+                        $return[$theme_tmp] = array('error' => 'We are unable to update the theme. Please perform the update again.', 'error_code' => 'up_to_date');
                     }elseif (is_wp_error($theme_info) || empty($theme_info)) {
                         $return[$theme_tmp] = array('error' => $this->parse_upgrade_response($upgrader->skin->get_upgrade_messages()), 'error_code' => 'upgrade_plugins_wp_error');
                     } else {

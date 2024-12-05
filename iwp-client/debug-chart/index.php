@@ -13,6 +13,7 @@
 		exit();
 	}
 	$iwp_multicall_hisID = $_GET['historyID'];
+	$iwp_multicall_hisID = abs( (int) $iwp_multicall_hisID );
 	$current_dir = dirname( dirname( dirname( dirname(__FILE__) ) ) ).'/infinitewp/backups';
 	$memoryPeakLog	 = 'DE_clMemoryPeak.'.$iwp_multicall_hisID.'.txt';
 	$memoryUsageLog  = 'DE_clMemoryUsage.'.$iwp_multicall_hisID.'.txt';
@@ -56,6 +57,9 @@ Class IWP_Debug_Chart{
 	}
 
 	private function read_logs($file) {
+		if (!file_exists($file)) {
+			return;
+		}
 		$file = fopen($file, "r");
 
 		if(empty($file)){

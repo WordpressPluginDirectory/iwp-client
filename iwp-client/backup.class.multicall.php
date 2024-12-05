@@ -364,6 +364,9 @@ class IWP_MMB_Backup_Multicall extends IWP_MMB_Core
 				$result_arr = array();
 				return $this->statusLog($this -> hisID, array('stage' => 'removingBackupFiles', 'status' => 'error', 'statusMsg' => 'Error while removing old backups. ('.$removed['error'].')', 'statusCode' => 'error_while_removing_old_backups', 'responseParams' => $result_arr));
 			}
+			if (!empty($params['account_info']['iwp_dropbox'])) {
+				set_iwp_dropbox_auth_setting($params['account_info']['iwp_dropbox']);				
+			}
 			
 			update_option('iwp_client_multi_backup_temp_values', $backup_settings_values);
 			$responseParams = array();
@@ -4601,6 +4604,11 @@ function ftp_backup($historyID,$args = '')
 		if(!$upload_loop_break_time){
 			$upload_loop_break_time = 25;			//safe
 		}
+
+		if($upload_loop_break_time < 15){
+			$upload_loop_break_time = 20;			//safe
+		}
+
 		$remote_stat = $sftp->stat($remote_file);
 		$current_remote_size = (is_array($remote_stat) && isset($remote_stat['size']) && $remote_stat['size'] > 0) ? $remote_stat['size'] : 0;
 
@@ -5110,6 +5118,7 @@ function ftp_backup($historyID,$args = '')
 						require_once $GLOBALS['iwp_mmb_plugin_dir'] . '/backup/dropbox.php';
 						
 						try{
+							set_iwp_dropbox_auth_setting($args);
 							$helper = new IWP_MMB_UploadModule_dropbox();
 							$dropbox = $helper->bootstrap();
 						}
@@ -5371,10 +5380,12 @@ function ftp_backup($historyID,$args = '')
 		foreach($backup_file as $key => $value)
 		{
 			try {
-				if ($oldVersion) {
-					$dropbox->fileopsDelete($dropbox_destination . '/' . $value);
-				}else{
-					$dropbox->delete($dropbox_destination . '/' . $value);
+				if (is_object($dropbox)) {
+					if ($oldVersion) {
+						$dropbox->fileopsDelete($dropbox_destination . '/' . $value);
+					}else{
+						$dropbox->delete($dropbox_destination . '/' . $value);
+					}
 				}
 			} catch (Exception $e) {
 				$this->_log($e->getMessage());
@@ -5429,12 +5440,14 @@ function ftp_backup($historyID,$args = '')
 			
 			try {
 				//exception should handle the errors
-				if ($oldVersion) {
-					$dropbox->download($dropbox_destination.'/'.$backup_file, $temp); 					
-				}else{
-	  				$dropbox->getFile($dropbox_destination.'/'.$backup_file, $temp); 
+				if (is_object($dropbox)) {
+					if ($oldVersion) {
+						$dropbox->download($dropbox_destination.'/'.$backup_file, $temp); 					
+					}else{
+						  $dropbox->getFile($dropbox_destination.'/'.$backup_file, $temp); 
+					}
+					return $temp;
 				}
-				return $temp;
 			} catch (Exception $e) {
 				$this->_log($e->getMessage());
 				return array(

@@ -57,11 +57,47 @@ class IWP_MMB_FixCompatibility
 
     public function fixDuoFactor()
     {
-        if (!is_plugin_active('duo-wordpress/duo_wordpress.php')) {
+
+        if (!is_plugin_active('duo-universal/duouniversal-wordpress.php')) {
             return;
         }
-
         add_action('init', array($this, '_fixDuoFactor'), -1);
+    }
+
+    function remove_by_plugin_class($tag, $class_name, $functionName, $isAction = false, $priority = 10) {
+        if (!class_exists($class_name)) {
+            return null;
+        }
+    
+        global $wp_filter;
+    
+        if (empty($wp_filter[$tag][$priority])) {
+            return null;
+        }
+    
+        foreach ($wp_filter[$tag][$priority] as $callable) {
+            if (empty($callable['function']) || !is_array($callable['function']) || count($callable['function']) < 2) {
+                continue;
+            }
+    
+            if (!is_a($callable['function'][0], $class_name)) {
+                continue;
+            }
+    
+            if ($callable['function'][1] !== $functionName) {
+                continue;
+            }
+    
+            if ($isAction) {
+                remove_action($tag, $callable['function'], $priority);
+            } else {
+                remove_filter($tag, $callable['function'], $priority);
+            }
+    
+            return $callable['function'];
+        }
+    
+        return null;
     }
 
     /**
@@ -69,7 +105,7 @@ class IWP_MMB_FixCompatibility
      */
     public function _fixDuoFactor()
     {
-        remove_action('init', 'duo_verify_auth', 10);
+        $this->remove_by_plugin_class('init','Duo\DuoUniversalWordpress\DuoUniversal_WordpressPlugin' ,'duo_verify_auth', 10);
     }
 
     public function fixAllInOneSecurity()

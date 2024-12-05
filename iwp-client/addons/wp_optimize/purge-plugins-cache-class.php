@@ -278,6 +278,7 @@ class IWP_MMB_PURGE_CACHE extends IWP_MMB_Core
 			$options['minify_js_key'] = create_rocket_uniqid();
 			remove_all_filters( 'update_option_' . WP_ROCKET_SLUG );
 			update_option( WP_ROCKET_SLUG, $options );
+			rocket_dismiss_box( 'rocket_warning_plugin_modification' );
 			return array('success' => 'All cache files have been deleted');
 		} else {
 			return array('error'=>"WP Rocket not activated", 'error_code' => 'comet_cache_plugin_is_not_activated');

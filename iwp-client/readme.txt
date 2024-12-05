@@ -2,8 +2,8 @@
 Contributors: infinitewp, amritanandh, rajkuppus
 Tags: admin, administration, amazon, api, authentication, automatic, dashboard, dropbox, events, integration, manage, multisite, multiple, notification, performance, s3, security, seo, stats, tracking, infinitewp, updates, backup, restore, iwp, infinite
 Requires at least: 3.1
-Tested up to: 6.5.2
-Stable tag: 1.13.0
+Tested up to: 6.7.1
+Stable tag: 1.13.1
 
 Install this plugin on unlimited sites and manage them all from a central dashboard.
 This plugin communicates with your InfiniteWP Admin Panel.
@@ -47,6 +47,13 @@ Credits: [Vladimir Prelovac](http://prelovac.com/vladimir) for his worker plugin
 5. One-click updates
 
 == Changelog ==
+
+= 1.13.1 - Dec 5th 2024 =
+* Fix: Open Admin failed when the Duo Universal plugin was active.
+* Fix: An issue causing SFTP backups to repeatedly upload, resulting in a "Multicall call limit reached" error.
+* Fix: Old Dropbox backups were not being deleted as per the retained limit settings.
+* Fix: WP Rocket clear cache notifications not disappearing in the wp-admin page after clearing the cache via the IWP admin panel.
+* Fix: Enhanced the clarity of update error messages for better troubleshooting.
 
 = 1.13.0 - April 29th 2024 =
 * Feature: SFTP support for multicall method backups.

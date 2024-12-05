@@ -2414,10 +2414,12 @@ function ftp_backup($args)
 		foreach($backup_file as $key => $value)
 		{
 			try {
-				if ($oldVersion) {
-                    $dropbox->fileopsDelete($dropbox_destination . '/' . $value);
-                }else{
-                    $dropbox->delete($dropbox_destination . '/' . $value);
+				if (is_object($dropbox)) {
+                    if ($oldVersion) {
+                        $dropbox->fileopsDelete($dropbox_destination . '/' . $value);
+                    }else{
+                        $dropbox->delete($dropbox_destination . '/' . $value);
+                    }
                 }
 			} catch (Exception $e) {
 				$this->_log($e->getMessage());
